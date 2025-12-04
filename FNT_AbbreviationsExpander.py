@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-import core.core_console_styles as cs
+import FontCore.core_console_styles as cs
 
 
 # --- Rules (copied from Files_ExpandStyleNames.py) ----------------------------------------------

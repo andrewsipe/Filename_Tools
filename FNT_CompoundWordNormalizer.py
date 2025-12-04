@@ -19,7 +19,7 @@ import re
 from pathlib import Path
 from typing import Dict, Iterable, List, Sequence, Tuple, Optional
 
-import core.core_console_styles as cs
+import FontCore.core_console_styles as cs
 
 
 # Optional: fontTools for --var mode

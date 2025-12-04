@@ -22,8 +22,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Sequence, Set, Tuple
 
-import core.core_console_styles as cs
-import core.core_file_collector as collector
+import FontCore.core_console_styles as cs
+import FontCore.core_file_collector as collector
 
 
 # --- Helpers ------------------------------------------------------------------------------------

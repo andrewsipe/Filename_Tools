@@ -16,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 
 # Import core file collector
-from core.core_file_collector import collect_font_files
+from FontCore.core_file_collector import collect_font_files
 
 
 # ============================================================================

@@ -26,7 +26,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Sequence, Set, Tuple
 
-import core.core_console_styles as cs
+import FontCore.core_console_styles as cs
 
 
 # --- Minimal Term Dictionaries ------------------------------------------------------------------

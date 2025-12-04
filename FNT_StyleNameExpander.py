@@ -42,7 +42,7 @@ except Exception:  # pragma: no cover - env dependent
     TTFont = None  # type: ignore
     _FONTTOOLS_AVAILABLE = False
 
-import core.core_console_styles as cs
+import FontCore.core_console_styles as cs
 
 
 # --- Rules (only what the user specified) -------------------------------------------------------

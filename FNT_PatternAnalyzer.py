@@ -21,7 +21,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Dict, List, Set
 
-import core.core_console_styles as cs
+import FontCore.core_console_styles as cs
 
 
 class FontPatternAnalyzer:

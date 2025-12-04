@@ -20,7 +20,7 @@ from typing import List, Set, Tuple, Dict, Optional
 
 # Import our dictionaries
 try:
-    from core.core_font_style_dictionaries import (
+    from FontCore.core_font_style_dictionaries import (
         COMPOUND_NORMALIZATIONS,
         STYLE_WORDS,
         ALL_WIDTH_TERMS,
@@ -37,7 +37,7 @@ except ImportError:
 
 # Import console styles
 try:
-    from core.core_console_styles import StatusIndicator
+    from FontCore.core_console_styles import StatusIndicator
 
     _HAS_CONSOLE_STYLES = True
 except ImportError:
@@ -891,7 +891,7 @@ _apply_safety_wrappers()
 
 def analyze_filename(filename: str) -> Dict:
     """
-    Detect issues in filename and return severity score.
+    Detect issues in filename and return severity sFontCore.
 
     Returns:
         {

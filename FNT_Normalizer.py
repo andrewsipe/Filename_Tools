@@ -19,8 +19,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Sequence, Tuple
 
-import core.core_console_styles as cs
-import core.core_file_collector as collector
+import FontCore.core_console_styles as cs
+import FontCore.core_file_collector as collector
 
 
 # --- Normalization Dictionary ---------------------------------------------------------------------
@@ -30,7 +30,7 @@ NORMALIZATION_DICT: dict[str, str] = {
     "emil": "emil",
     "trab": "trab",
     "tral": "tral",
-    #Normalize hyphen location
+    # Normalize hyphen location
     "alt-": "-Alt",
 }
 

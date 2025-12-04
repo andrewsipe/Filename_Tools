@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Optional, Sequence, Tuple
 
-import core.core_console_styles as cs
+import FontCore.core_console_styles as cs
 
 try:
     import word2number.w2n as w2n  # type: ignore

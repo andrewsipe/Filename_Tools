@@ -1,0 +1,9 @@
+# Filename_Tools dependencies
+# These scripts normalize and clean font filenames using various strategies.
+
+# Core dependencies (required by all scripts)
+fonttools>=4.40.0
+rich>=13.0.0
+
+# Number word conversion (used by FNT_NumberWordConverter.py)
+word2number>=1.3

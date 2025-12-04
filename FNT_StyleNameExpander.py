@@ -33,6 +33,13 @@ import re
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
+# Add project root to path for FontCore imports (works for root and subdirectory scripts)
+_project_root = Path(__file__).parent
+while not (_project_root / "FontCore").exists() and _project_root.parent != _project_root:
+    _project_root = _project_root.parent
+if str(_project_root) not in sys.path:
+    sys.path.insert(0, str(_project_root))
+
 # Optional: fontTools for --var mode (name table normalization on variable fonts)
 try:  # noqa: SIM105
     from fontTools.ttLib import TTFont  # type: ignore

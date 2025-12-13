@@ -20,8 +20,11 @@ from pathlib import Path
 from typing import List, Sequence, Tuple
 
 # Add project root to path for FontCore imports (works for root and subdirectory scripts)
+# ruff: noqa: E402
 _project_root = Path(__file__).parent
-while not (_project_root / "FontCore").exists() and _project_root.parent != _project_root:
+while (
+    not (_project_root / "FontCore").exists() and _project_root.parent != _project_root
+):
     _project_root = _project_root.parent
 if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
@@ -32,13 +35,28 @@ import FontCore.core_file_collector as collector
 
 # --- Normalization Dictionary ---------------------------------------------------------------------
 
+# Case-insensitive term normalization
 NORMALIZATION_DICT: dict[str, str] = {
+    " ": "",  # remove spaces
     "emib": "emib",
     "emil": "emil",
+    "emit": "emit",
     "trab": "trab",
     "tral": "tral",
-    # Normalize hyphen location
-    "alt-": "-Alt",
+    "trat": "trat",
+    "smallcaps": "Smallcaps",
+    "typeface": "",
+}
+
+# Case-sensitive term normalization (with delimiters)
+CASE_SENSITIVE_DICT: dict[str, str] = {
+    "It.": "Italic.",
+    "Ita.": "Italic.",
+    "Obl.": "Oblique.",
+    "Obliq.": "Oblique.",
+    "SC.": "Smallcaps.",
+    "ItalicSmallCaps": "SmallcapsItalic",
+    "ItalicSmallcaps": "SmallcapsItalic",
 }
 
 
@@ -58,7 +76,9 @@ def is_variable_font(filename: str) -> bool:
     """Check if filename indicates a variable font (case-insensitive)."""
     stem, _ = split_stem_and_suffixes(filename)
     stem_lower = stem.lower()
-    return any(indicator in stem_lower for indicator in ["variable", "var", "vf"])
+    # Use word boundaries to avoid false matches (e.g., "Nova" containing "var")
+    patterns = [r"\bvariable\b", r"\bvar\b", r"\bvf\b"]
+    return any(re.search(pattern, stem_lower) for pattern in patterns)
 
 
 # --- Normalization Logic ------------------------------------------------------------------------
@@ -80,10 +100,54 @@ def normalize_filename(filename: str) -> Tuple[str, List[str]]:
         return filename, []
 
     replaced_terms = []
-    result = stem
+    # For case-sensitive terms (which may include periods before extensions),
+    # search in the full filename to catch terms like "It." before ".otf"
+    full_name = Path(filename).name
+    result = full_name
 
-    # Process each term in dictionary order
-    for find_term, replace_term in NORMALIZATION_DICT.items():
+    # Process case-sensitive terms first (sorted by length, longest first)
+    sorted_case_sensitive = sorted(
+        CASE_SENSITIVE_DICT.items(), key=lambda x: len(x[0]), reverse=True
+    )
+
+    for find_term, replace_term in sorted_case_sensitive:
+        # Case-sensitive search for the term in full filename
+        pattern = re.compile(re.escape(find_term))
+        match = pattern.search(result)
+
+        if match:
+            matched_text = match.group(0)
+            # Skip if matched text already equals replacement (redundant)
+            if matched_text == replace_term:
+                continue
+
+            # Replace the matched occurrence with normalized form
+            start, end = match.span()
+            # If find_term ends with period but replace_term doesn't, and we're
+            # replacing before an extension, preserve the period separator
+            if find_term.endswith(".") and not replace_term.endswith("."):
+                # Check if next char after match is start of extension (letter after period)
+                if end < len(result) and result[end : end + 1].isalnum():
+                    # This looks like it might be an extension - preserve period
+                    result = result[:start] + replace_term + "." + result[end:]
+                else:
+                    result = result[:start] + replace_term + result[end:]
+            else:
+                result = result[:start] + replace_term + result[end:]
+            replaced_terms.append(find_term)
+
+    # After case-sensitive processing, split again to get updated stem
+    # (in case the replacement changed the extension boundary)
+    updated_path = Path(result)
+    result = updated_path.stem
+    suffixes = updated_path.suffix
+
+    # Process case-insensitive terms (sorted by length, longest first)
+    sorted_terms = sorted(
+        NORMALIZATION_DICT.items(), key=lambda x: len(x[0]), reverse=True
+    )
+
+    for find_term, replace_term in sorted_terms:
         # Case-insensitive search for the term
         pattern = re.compile(re.escape(find_term), re.IGNORECASE)
         match = pattern.search(result)

@@ -26,8 +26,11 @@ from pathlib import Path
 from typing import Iterable, List, Optional, Sequence, Tuple
 
 # Add project root to path for FontCore imports (works for root and subdirectory scripts)
+# ruff: noqa: E402
 _project_root = Path(__file__).parent
-while not (_project_root / "FontCore").exists() and _project_root.parent != _project_root:
+while (
+    not (_project_root / "FontCore").exists() and _project_root.parent != _project_root
+):
     _project_root = _project_root.parent
 if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
@@ -173,7 +176,9 @@ def find_number_sequence(
     return best_match
 
 
-def convert_numbers_in_segment(segment: str) -> Tuple[str, List[Tuple[str, str]]]:
+def convert_numbers_in_segment(
+    segment: str, leading_zero: bool = False
+) -> Tuple[str, List[Tuple[str, str]]]:
     """Convert spelled-out numbers in a single segment.
 
     Handles both CamelCase and space-separated formats.
@@ -214,9 +219,14 @@ def convert_numbers_in_segment(segment: str) -> Tuple[str, List[Tuple[str, str]]
                 if " " not in segment
                 else " ".join(words[start:end])
             )
-            converted_words.append(str(number))
-            if original_sequence != str(number):
-                changes.append((original_sequence, str(number)))
+            # Apply leading zero formatting if requested and number is 1-9
+            if leading_zero and 1 <= number <= 9:
+                number_str = f"{number:02d}"  # 1 -> "01", 9 -> "09"
+            else:
+                number_str = str(number)  # 10 -> "10", 100 -> "100"
+            converted_words.append(number_str)
+            if original_sequence != number_str:
+                changes.append((original_sequence, number_str))
             # Move past the converted sequence - this ensures we skip the words
             # that were part of the number but continue processing remaining words
             i = end
@@ -244,7 +254,7 @@ def convert_numbers_in_segment(segment: str) -> Tuple[str, List[Tuple[str, str]]
 
 
 def convert_number_words_in_basename(
-    basename: str,
+    basename: str, leading_zero: bool = False
 ) -> Tuple[str, List[Tuple[str, str]]]:
     """Convert spelled-out numbers in basename, processing each segment independently.
 
@@ -262,7 +272,9 @@ def convert_number_words_in_basename(
 
     for part in parts:
         if _is_alpha_part(part):
-            converted, changes = convert_numbers_in_segment(part)
+            converted, changes = convert_numbers_in_segment(
+                part, leading_zero=leading_zero
+            )
             new_parts.append(converted)
             all_changes.extend(changes)
         else:
@@ -273,10 +285,14 @@ def convert_number_words_in_basename(
     return new_basename, all_changes
 
 
-def build_new_filename(original_name: str) -> Tuple[str, List[Tuple[str, str]]]:
+def build_new_filename(
+    original_name: str, leading_zero: bool = False
+) -> Tuple[str, List[Tuple[str, str]]]:
     """Build new filename with number words converted to integers."""
     stem, suffixes = split_stem_and_suffixes(original_name)
-    new_stem, changes = convert_number_words_in_basename(stem)
+    new_stem, changes = convert_number_words_in_basename(
+        stem, leading_zero=leading_zero
+    )
     return f"{new_stem}{suffixes}", changes
 
 
@@ -291,10 +307,10 @@ class RenameDecision:
     destination: Path
 
 
-def compute_rename(file_path: Path) -> RenameDecision:
+def compute_rename(file_path: Path, leading_zero: bool = False) -> RenameDecision:
     """Compute the rename decision for a file."""
     old_name = file_path.name
-    new_name, changes = build_new_filename(old_name)
+    new_name, changes = build_new_filename(old_name, leading_zero=leading_zero)
     return RenameDecision(
         old_name=old_name,
         new_name=new_name,
@@ -303,7 +319,9 @@ def compute_rename(file_path: Path) -> RenameDecision:
     )
 
 
-def analyze_files(paths: List[Path], recursive: bool) -> dict:
+def analyze_files(
+    paths: List[Path], recursive: bool, leading_zero: bool = False
+) -> dict:
     """
     Analyze files to determine what will be changed.
     Returns dict with analysis data.
@@ -314,7 +332,7 @@ def analyze_files(paths: List[Path], recursive: bool) -> dict:
     # Analyze each file
     for path in paths:
         for file_path in iter_target_files(path, recursive):
-            decision = compute_rename(file_path)
+            decision = compute_rename(file_path, leading_zero=leading_zero)
             # Only include files where the name actually changes
             if decision.new_name != decision.old_name:
                 files_with_changes.append((file_path, decision))
@@ -452,9 +470,10 @@ def perform_rename(
     dry_run: bool,
     conflict: str,
     verbose: bool,
+    leading_zero: bool = False,
 ) -> Tuple[bool, str | None]:
     original_value = file_path.name
-    new_value, changes = build_new_filename(original_value)
+    new_value, changes = build_new_filename(original_value, leading_zero=leading_zero)
     if new_value == original_value:
         if verbose:
             cs.StatusIndicator("unchanged").add_file(str(file_path)).emit()
@@ -538,6 +557,12 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         action="store_true",
         help="Skip preflight preview and proceed directly",
     )
+    parser.add_argument(
+        "-0",
+        "--leading-zero",
+        action="store_true",
+        help="Add leading zero to single-digit numbers (1-9) -> (01-09)",
+    )
     return parser.parse_args(argv)
 
 
@@ -567,7 +592,9 @@ def main(argv: Sequence[str]) -> int:
 
     # Analyze files and show preview unless --no-preview
     if not args.no_preview:
-        analysis = analyze_files(path_objects, args.recursive)
+        analysis = analyze_files(
+            path_objects, args.recursive, leading_zero=args.leading_zero
+        )
 
         if analysis["files_with_changes"]:
             show_preflight_preview(analysis)
@@ -600,6 +627,7 @@ def main(argv: Sequence[str]) -> int:
                 dry_run=args.dry_run,
                 conflict=args.conflict,
                 verbose=args.verbose,
+                leading_zero=args.leading_zero,
             )
             if did_change:
                 changed += 1

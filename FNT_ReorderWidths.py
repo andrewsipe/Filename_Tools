@@ -21,8 +21,11 @@ from pathlib import Path
 from typing import Iterable, List, Sequence, Set, Tuple
 
 # Add project root to path for FontCore imports (works for root and subdirectory scripts)
+# ruff: noqa: E402
 _project_root = Path(__file__).parent
-while not (_project_root / "FontCore").exists() and _project_root.parent != _project_root:
+while (
+    not (_project_root / "FontCore").exists() and _project_root.parent != _project_root
+):
     _project_root = _project_root.parent
 if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
@@ -367,11 +370,68 @@ def extract_number_terms(
     return remaining_text, number_terms_found
 
 
+def format_number_term_with_leading_zero(term: str, leading_zero: bool) -> str:
+    """
+    Format a number term with leading zero if requested and applicable.
+
+    Handles:
+    - Standalone numbers: "1" -> "01", "10" -> "10", "1.5" -> "1.5"
+    - Prefix+digits: "No1" -> "No01", "No87" -> "No87"
+    - Digits+prefix: "1No" -> "01No", "87No" -> "87No"
+
+    Only formats single-digit integers (1-9), leaves multi-digit and decimals unchanged.
+    """
+    if not leading_zero:
+        return term
+
+    # Check if it's a standalone number (just digits, possibly with decimal)
+    if re.match(r"^\d+\.?\d*$", term):
+        try:
+            # Try to parse as integer first
+            num = int(term)
+            if 1 <= num <= 9:
+                return f"{num:02d}"  # 1 -> "01", 9 -> "09"
+        except ValueError:
+            # Has decimal point, leave unchanged
+            pass
+        return term
+
+    # Check for prefix+digits pattern (e.g., "No87", "G1")
+    prefix_digits_match = re.match(r"^([A-Za-z]+)(\d+)$", term)
+    if prefix_digits_match:
+        prefix = prefix_digits_match.group(1)
+        digits = prefix_digits_match.group(2)
+        try:
+            num = int(digits)
+            if 1 <= num <= 9:
+                return f"{prefix}{num:02d}"  # "No1" -> "No01"
+        except ValueError:
+            pass
+        return term
+
+    # Check for digits+prefix pattern (e.g., "87No", "1G")
+    digits_prefix_match = re.match(r"^(\d+)([A-Za-z]+)$", term)
+    if digits_prefix_match:
+        digits = digits_prefix_match.group(1)
+        prefix = digits_prefix_match.group(2)
+        try:
+            num = int(digits)
+            if 1 <= num <= 9:
+                return f"{num:02d}{prefix}"  # "1No" -> "01No"
+        except ValueError:
+            pass
+        return term
+
+    # Doesn't match expected patterns, return unchanged
+    return term
+
+
 def build_new_filename(
     original_name: str,
     move_ahead_terms: List[str] | None = None,
     number_prefix: str | None = None,
     ignore_families: List[str] | None = None,
+    leading_zero: bool = False,
 ) -> Tuple[str, dict]:
     """
     Process a filename and reorder terms (numbers, move-ahead, widths).
@@ -414,6 +474,12 @@ def build_new_filename(
                     style_part, number_prefix, family_part, ignore_families
                 )
                 all_numbers = family_numbers + style_numbers
+                # Apply leading zero formatting if requested
+                if leading_zero:
+                    all_numbers = [
+                        format_number_term_with_leading_zero(term, leading_zero)
+                        for term in all_numbers
+                    ]
 
             # Extract move-ahead terms (if configured)
             all_move_ahead = []
@@ -458,6 +524,12 @@ def build_new_filename(
         clean_stem, all_numbers = extract_number_terms(
             clean_stem, number_prefix, stem, ignore_families
         )
+        # Apply leading zero formatting if requested
+        if leading_zero:
+            all_numbers = [
+                format_number_term_with_leading_zero(term, leading_zero)
+                for term in all_numbers
+            ]
 
     if move_ahead_terms:
         clean_stem, all_move_ahead = extract_move_ahead_terms(
@@ -489,6 +561,7 @@ def analyze_files(
     move_ahead_terms: List[str] | None = None,
     number_prefix: str | None = None,
     ignore_families: List[str] | None = None,
+    leading_zero: bool = False,
 ) -> dict:
     """
     Analyze files to determine what terms will be affected.
@@ -508,7 +581,11 @@ def analyze_files(
     for file_path_str in font_files:
         file_path = Path(file_path_str)
         decision = compute_rename(
-            file_path, move_ahead_terms, number_prefix, ignore_families
+            file_path,
+            move_ahead_terms,
+            number_prefix,
+            ignore_families,
+            leading_zero=leading_zero,
         )
         # Only include files where the name actually changes
         if decision.all_moved_terms() and decision.new_name != decision.old_name:
@@ -675,13 +752,18 @@ def compute_rename(
     move_ahead_terms: List[str] | None = None,
     number_prefix: str | None = None,
     ignore_families: List[str] | None = None,
+    leading_zero: bool = False,
 ) -> RenameDecision:
     """
     Compute the rename decision for a file with optional term reordering.
     """
     old_name = file_path.name
     new_name, moved_terms = build_new_filename(
-        old_name, move_ahead_terms, number_prefix, ignore_families
+        old_name,
+        move_ahead_terms,
+        number_prefix,
+        ignore_families,
+        leading_zero=leading_zero,
     )
 
     return RenameDecision(
@@ -721,10 +803,15 @@ def perform_rename(
     move_ahead_terms: List[str] | None = None,
     number_prefix: str | None = None,
     ignore_families: List[str] | None = None,
+    leading_zero: bool = False,
 ) -> Tuple[bool, str | None]:
     """Perform the actual file rename operation."""
     decision = compute_rename(
-        file_path, move_ahead_terms, number_prefix, ignore_families
+        file_path,
+        move_ahead_terms,
+        number_prefix,
+        ignore_families,
+        leading_zero=leading_zero,
     )
     if decision.new_name == decision.old_name:
         if verbose:
@@ -828,6 +915,12 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         metavar="PATTERN",
         help="Don't extract numbers from family names matching these literal patterns (repeatable, supports comma-separated)",
     )
+    parser.add_argument(
+        "-0",
+        "--leading-zero",
+        action="store_true",
+        help="Add leading zero to single-digit numbers (1-9) when using --number-term",
+    )
     return parser.parse_args(argv)
 
 
@@ -896,6 +989,7 @@ def main(argv: Sequence[str]) -> int:
             move_ahead_terms,
             number_term,
             ignore_families,
+            leading_zero=args.leading_zero,
         )
 
         if analysis["files_with_changes"]:
@@ -929,6 +1023,7 @@ def main(argv: Sequence[str]) -> int:
                 move_ahead_terms=move_ahead_terms,
                 number_prefix=number_term,
                 ignore_families=ignore_families,
+                leading_zero=args.leading_zero,
             )
             if did_change:
                 changed += 1

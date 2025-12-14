@@ -37,7 +37,8 @@ import FontCore.core_file_collector as collector
 
 # Case-insensitive term normalization
 NORMALIZATION_DICT: dict[str, str] = {
-    " ": "",  # remove spaces
+    " ": "",  # remove space (per run)
+    "--": "-",  # simplify hyphens
     "emib": "emib",
     "emil": "emil",
     "emit": "emit",

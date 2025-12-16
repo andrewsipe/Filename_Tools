@@ -37,8 +37,6 @@ import FontCore.core_file_collector as collector
 
 # Case-insensitive term normalization
 NORMALIZATION_DICT: dict[str, str] = {
-    " ": "",  # remove space (per run)
-    "--": "-",  # simplify hyphens
     "emib": "emib",
     "emil": "emil",
     "emit": "emit",
@@ -56,6 +54,9 @@ CASE_SENSITIVE_DICT: dict[str, str] = {
     "Obl.": "Oblique.",
     "Obliq.": "Oblique.",
     "SC.": "Smallcaps.",
+    "Pro.": "Pro-Regular.",
+    "Std.": "Std-Regular.",
+    "ItalicAlt.": "AltItalic.",
     "ItalicSmallCaps": "SmallcapsItalic",
     "ItalicSmallcaps": "SmallcapsItalic",
 }
@@ -80,6 +81,19 @@ def is_variable_font(filename: str) -> bool:
     # Use word boundaries to avoid false matches (e.g., "Nova" containing "var")
     patterns = [r"\bvariable\b", r"\bvar\b", r"\bvf\b"]
     return any(re.search(pattern, stem_lower) for pattern in patterns)
+
+
+def remove_spaces(text: str) -> str:
+    """Remove all space characters from the given text."""
+    return text.replace(" ", "")
+
+
+def normalize_hyphens(text: str) -> str:
+    """
+    Collapse multiple hyphens into a single hyphen and strip leading/trailing hyphens.
+    """
+    collapsed = re.sub(r"-{2,}", "-", text)
+    return collapsed.strip("-")
 
 
 # --- Normalization Logic ------------------------------------------------------------------------
@@ -164,7 +178,12 @@ def normalize_filename(filename: str) -> Tuple[str, List[str]]:
             result = result[:start] + replace_term + result[end:]
             replaced_terms.append(find_term)
 
-    if not replaced_terms:
+    # Apply global whitespace and hyphen normalization to the stem
+    result = remove_spaces(result)
+    result = normalize_hyphens(result)
+
+    # If nothing changed at all, return the original filename
+    if not replaced_terms and result == stem:
         return filename, []
 
     # Reconstruct full filename
@@ -354,10 +373,9 @@ def perform_rename(
     # On case-insensitive filesystems (macOS), same file with different case will exist()
     # So we check if it's actually a different file (case-insensitively different name)
     if str(destination).lower() != str(file_path).lower() and destination.exists():
-        if verbose:
-            cs.StatusIndicator("warning").add_file(decision.new_name).with_explanation(
-                "exists, skipping"
-            ).emit()
+        cs.StatusIndicator("warning").add_file(decision.new_name).with_explanation(
+            "exists, skipping"
+        ).emit()
         return False, None
 
     # Build info string for replaced terms

@@ -94,6 +94,20 @@ def _is_alpha_part(text: str) -> bool:
     return bool(text) and text[0].isalpha()
 
 
+def _is_single_digit_number(word: str) -> bool:
+    """Check if a word represents a single-digit number (0-9).
+
+    Returns True if the word converts to a number between 0 and 9.
+    """
+    if not _W2N_AVAILABLE:
+        return False
+    try:
+        number = w2n.word_to_num(word.lower())  # type: ignore
+        return 0 <= number <= 9
+    except Exception:
+        return False
+
+
 def split_camelcase(word: str) -> List[str]:
     """Split CamelCase/PascalCase word into individual words.
 
@@ -210,6 +224,50 @@ def convert_numbers_in_segment(
     converted_words: List[str] = []
     i = 0
     while i < len(words):
+        # Check if we have consecutive single-digit numbers (for concatenation)
+        if _is_single_digit_number(words[i]):
+            # Count how many consecutive single-digit numbers we have
+            consecutive_count = 1
+            while (
+                i + consecutive_count < len(words)
+                and _is_single_digit_number(words[i + consecutive_count])
+            ):
+                consecutive_count += 1
+
+            # If we have 2+ consecutive single-digit numbers, concatenate them
+            if consecutive_count >= 2:
+                # Convert each single-digit number individually and concatenate
+                digit_strings: List[str] = []
+                original_sequence_parts: List[str] = []
+                for j in range(consecutive_count):
+                    word = words[i + j]
+                    original_sequence_parts.append(word)
+                    try:
+                        digit = w2n.word_to_num(word.lower())  # type: ignore
+                        # Apply leading zero formatting if requested
+                        if leading_zero and 1 <= digit <= 9:
+                            digit_str = f"{digit:02d}"
+                        else:
+                            digit_str = str(digit)
+                        digit_strings.append(digit_str)
+                    except Exception:
+                        # If conversion fails, keep the original word
+                        digit_strings.append(word)
+
+                # Concatenate all digits
+                concatenated = "".join(digit_strings)
+                original_sequence = (
+                    "".join(original_sequence_parts)
+                    if " " not in segment
+                    else " ".join(original_sequence_parts)
+                )
+                converted_words.append(concatenated)
+                if original_sequence != concatenated:
+                    changes.append((original_sequence, concatenated))
+                i += consecutive_count
+                continue
+
+        # Not consecutive single-digit numbers - use existing logic
         match = find_number_sequence(words, i)
         if match:
             start, end, number = match

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Reorder width terms in font filenames to appear immediately after the hyphen.
+Reorder slope terms in font filenames to appear at the end of the filename.
 
-Focus: Move width terms to the beginning of the style part.
+Focus: Move slope terms to the end of the style part.
 
 Logic:
 1. Split filename stem by the last hyphen into a "family" and "style" part.
-2. Find all width terms in the style part and extract them in order found.
-3. Remove the width terms from their original positions.
-4. Rebuild as: FamilyName-WidthTerms + RemainingStyle
+2. Find all slope terms in the style part and extract them in order found.
+3. Remove the slope terms from their original positions.
+4. Rebuild as: FamilyName-Rest+MoveAhead+SlopeTerms+MoveBehind
 """
 
 from __future__ import annotations
@@ -34,22 +34,23 @@ import FontCore.core_file_collector as collector
 import re
 
 
-# --- Width Terms Dictionary ---------------------------------------------------------------------
+# --- Slope Terms Dictionary ---------------------------------------------------------------------
 
-# Base width terms (the core 8)
-BASE_WIDTH_TERMS: Set[str] = {
-    "Compressed",
-    "Compact",
-    "Condensed",
-    "Narrow",
-    "Tight",
-    "Wide",
-    "Extended",
-    "Expanded",
+# Base slope terms
+BASE_SLOPE_TERMS: Set[str] = {
+    "Italic",
+    "Oblique",
+    "Slanted",
+    "Slant",
+    "Inclined",
+    "Backslanted",
+    "Backslant",
+    "Reverse",
+    "Retalic",
 }
 
 # Modifiers that combine with base terms
-WIDTH_MODIFIERS: Set[str] = {
+SLOPE_MODIFIERS: Set[str] = {
     "Semi",
     "Demi",
     "Extra",
@@ -399,12 +400,12 @@ class TermExtractor:
         return "".join(remaining_parts)
 
 
-# --- Create Width Term Extractor Instance ---------------------------------------------------------------------
+# --- Create Slope Term Extractor Instance ---------------------------------------------------------------------
 
-# Create width term extractor instance
-WIDTH_EXTRACTOR = TermExtractor(
-    base_terms=BASE_WIDTH_TERMS,
-    modifiers=WIDTH_MODIFIERS,
+# Create slope term extractor instance
+SLOPE_EXTRACTOR = TermExtractor(
+    base_terms=BASE_SLOPE_TERMS,
+    modifiers=SLOPE_MODIFIERS,
     support_x_prefix=True,
 )
 
@@ -430,12 +431,12 @@ def is_variable_font(filename: str) -> bool:
     return any(indicator in stem_lower for indicator in ["variable", "var", "vf"])
 
 
-# --- Width Reordering Logic --------------------------------------------------------------------
+# --- Slope Reordering Logic --------------------------------------------------------------------
 
 
-def extract_width_terms(text: str) -> Tuple[str, List[str]]:
-    """Extract width terms from text and return the text with widths removed."""
-    return WIDTH_EXTRACTOR.extract_primary_terms(text)
+def extract_slope_terms(text: str) -> Tuple[str, List[str]]:
+    """Extract slope terms from text and return the text with slopes removed."""
+    return SLOPE_EXTRACTOR.extract_primary_terms(text)
 
 
 def create_empty_moved_terms_dict() -> dict:
@@ -444,7 +445,7 @@ def create_empty_moved_terms_dict() -> dict:
         "numbers_ahead": [],
         "numbers_behind": [],
         "move_ahead": [],
-        "widths": [],
+        "slopes": [],
         "move_behind": [],
     }
 
@@ -476,7 +477,7 @@ def extract_all_terms_from_parts(
     clean_style = style_part
     moved_terms = create_empty_moved_terms_dict()
 
-    # Extract in order: numbers_ahead → move_ahead → widths → move_behind → numbers_behind
+    # Extract in order: numbers_ahead → move_ahead → slopes → move_behind → numbers_behind
 
     # Extract numbers_ahead
     if number_ahead_prefix is not None:
@@ -500,10 +501,10 @@ def extract_all_terms_from_parts(
         )
         moved_terms["move_ahead"] = family_move_ahead + style_move_ahead
 
-    # Extract width terms (always)
-    clean_family, family_widths = extract_width_terms(clean_family)
-    clean_style, style_widths = extract_width_terms(clean_style)
-    moved_terms["widths"] = family_widths + style_widths
+    # Extract slope terms (always)
+    clean_family, family_slopes = extract_slope_terms(clean_family)
+    clean_style, style_slopes = extract_slope_terms(clean_style)
+    moved_terms["slopes"] = family_slopes + style_slopes
 
     # Extract move_behind terms
     if move_behind_terms:
@@ -540,13 +541,13 @@ def build_new_filename(
     leading_zero: bool = False,
 ) -> Tuple[str, dict]:
     """
-    Process a filename and reorder terms (numbers, move-ahead, widths, move-behind).
+    Process a filename and reorder terms (numbers, move-ahead, slopes, move-behind).
 
     Returns (new_filename, dict_of_moved_terms) where dict contains:
-    - 'numbers_ahead': List of moved number terms (before width)
-    - 'numbers_behind': List of moved number terms (after width)
+    - 'numbers_ahead': List of moved number terms (before slope)
+    - 'numbers_behind': List of moved number terms (after slope)
     - 'move_ahead': List of moved ahead terms
-    - 'widths': List of moved width terms
+    - 'slopes': List of moved slope terms
     - 'move_behind': List of moved behind terms
     """
     # Skip variable fonts
@@ -583,14 +584,15 @@ def build_new_filename(
         if not any(moved_terms.values()):
             return original_name, create_empty_moved_terms_dict()
 
+        # Build final name: CleanFamily-CleanStyle+NumbersAhead+MoveAhead+Slopes+MoveBehind+NumbersBehind
         all_terms = "".join(
             moved_terms["numbers_ahead"]
             + moved_terms["move_ahead"]
-            + moved_terms["widths"]
+            + moved_terms["slopes"]
             + moved_terms["move_behind"]
             + moved_terms["numbers_behind"]
         )
-        final_stem = f"{clean_family}-{all_terms}{clean_style}"
+        final_stem = f"{clean_family}-{clean_style}{all_terms}"
         return f"{final_stem}{suffixes}", moved_terms
 
     # Process non-hyphenated filename
@@ -609,7 +611,7 @@ def build_new_filename(
         all_terms = "".join(
             moved_terms["numbers_ahead"]
             + moved_terms["move_ahead"]
-            + moved_terms["widths"]
+            + moved_terms["slopes"]
             + moved_terms["move_behind"]
             + moved_terms["numbers_behind"]
         )
@@ -640,7 +642,7 @@ def analyze_files(
     number_terms_behind_found = set()
     move_ahead_terms_found = set()
     move_behind_terms_found = set()
-    width_terms_found = set()
+    slope_terms_found = set()
     files_with_changes = []
 
     # Collect all font files using the file collector
@@ -667,7 +669,7 @@ def analyze_files(
             number_terms_behind_found.update(decision.moved_numbers_behind)
             move_ahead_terms_found.update(decision.moved_ahead)
             move_behind_terms_found.update(decision.moved_behind)
-            width_terms_found.update(decision.moved_widths)
+            slope_terms_found.update(decision.moved_slopes)
 
     # Sort files_with_changes alphabetically by filename
     files_with_changes.sort(key=lambda x: x[0].name.lower())
@@ -679,7 +681,7 @@ def analyze_files(
         "number_terms_behind_found": sorted(number_terms_behind_found),
         "move_ahead_terms_found": sorted(move_ahead_terms_found),
         "move_behind_terms_found": sorted(move_behind_terms_found),
-        "width_terms_found": sorted(width_terms_found),
+        "slope_terms_found": sorted(slope_terms_found),
     }
 
 
@@ -709,11 +711,11 @@ def show_preflight_preview(analysis: dict) -> None:
         cs.emit(
             f"{cs.indent(1)}Move-ahead terms to reorder: {', '.join(analysis['move_ahead_terms_found'])}"
         )
-    if analysis["width_terms_found"]:
+    if analysis["slope_terms_found"]:
         cs.emit(
-            f"{cs.indent(1)}Width terms to reorder: {', '.join(analysis['width_terms_found'])}"
+            f"{cs.indent(1)}Slope terms to reorder: {', '.join(analysis['slope_terms_found'])}"
         )
-    if analysis.get("move_behind_terms_found"):
+    if analysis["move_behind_terms_found"]:
         cs.emit(
             f"{cs.indent(1)}Move-behind terms to reorder: {', '.join(analysis['move_behind_terms_found'])}"
         )
@@ -736,14 +738,13 @@ def show_preflight_preview(analysis: dict) -> None:
                     all_moved = decision.all_moved_terms()
 
                     # Build highlighted before/after strings
-                    before_highlighted = highlight_width_terms_in_filename(
+                    before_highlighted = highlight_slope_terms_in_filename(
                         decision.old_name, all_moved, style="before"
                     )
-                    after_highlighted = highlight_width_terms_in_filename(
+                    after_highlighted = highlight_slope_terms_in_filename(
                         decision.new_name,
                         all_moved,
                         style="after",
-                        mark_hyphen=True,
                     )
 
                     # Build moved terms info with type labels
@@ -754,8 +755,8 @@ def show_preflight_preview(analysis: dict) -> None:
                         )
                     if decision.moved_ahead:
                         moved_parts.append(f"↑: {', '.join(decision.moved_ahead)}")
-                    if decision.moved_widths:
-                        moved_parts.append(f"Width: {', '.join(decision.moved_widths)}")
+                    if decision.moved_slopes:
+                        moved_parts.append(f"Slope: {', '.join(decision.moved_slopes)}")
                     if decision.moved_behind:
                         moved_parts.append(f"↓: {', '.join(decision.moved_behind)}")
                     if decision.moved_numbers_behind:
@@ -778,8 +779,8 @@ def show_preflight_preview(analysis: dict) -> None:
                     )
                 if decision.moved_ahead:
                     moved_parts.append(f"move-ahead: {', '.join(decision.moved_ahead)}")
-                if decision.moved_widths:
-                    moved_parts.append(f"widths: {', '.join(decision.moved_widths)}")
+                if decision.moved_slopes:
+                    moved_parts.append(f"slopes: {', '.join(decision.moved_slopes)}")
                 if decision.moved_behind:
                     moved_parts.append(
                         f"move-behind: {', '.join(decision.moved_behind)}"
@@ -796,33 +797,26 @@ def show_preflight_preview(analysis: dict) -> None:
     cs.emit("")
 
 
-def highlight_width_terms_in_filename(
+def highlight_slope_terms_in_filename(
     filename: str,
-    width_terms: List[str],
+    slope_terms: List[str],
     style: str = "before",
-    mark_hyphen: bool = False,
 ) -> str:
     """
-    Highlight width terms in a filename with the specified style.
+    Highlight slope terms in a filename with the specified style.
 
     Args:
         filename: The filename to process
-        width_terms: List of width terms to highlight
+        slope_terms: List of slope terms to highlight
         style: "before" (turquoise) or "after" (magenta)
-        mark_hyphen: If True, also highlight the hyphen after family name (for after style)
     """
-    if not cs.RICH_AVAILABLE or not width_terms:
+    if not cs.RICH_AVAILABLE or not slope_terms:
         return filename
 
     result = filename
 
-    # For "after" style, highlight the hyphen first if needed
-    if mark_hyphen and style == "after" and "-" in result:
-        # Only highlight the first hyphen (the one after family name)
-        result = result.replace("-", "[value.after]-[/value.after]", 1)
-
-    # Highlight each width term (all occurrences)
-    for term in width_terms:
+    # Highlight each slope term (all occurrences)
+    for term in slope_terms:
         if style == "before":
             # Highlight all occurrences in the "before" filename
             result = result.replace(term, f"[value.before]{term}[/value.before]")
@@ -843,16 +837,16 @@ class RenameDecision:
     moved_numbers_ahead: List[str]
     moved_numbers_behind: List[str]
     moved_ahead: List[str]
-    moved_widths: List[str]
+    moved_slopes: List[str]
     moved_behind: List[str]
     destination: Path
 
     def all_moved_terms(self) -> List[str]:
-        """Return all moved terms in order: numbers_ahead, move-ahead, widths, move-behind, numbers_behind."""
+        """Return all moved terms in order: numbers_ahead, move-ahead, slopes, move-behind, numbers_behind."""
         return (
             self.moved_numbers_ahead
             + self.moved_ahead
-            + self.moved_widths
+            + self.moved_slopes
             + self.moved_behind
             + self.moved_numbers_behind
         )
@@ -891,7 +885,7 @@ def compute_rename(
         moved_numbers_ahead=moved_terms["numbers_ahead"],
         moved_numbers_behind=moved_terms["numbers_behind"],
         moved_ahead=moved_terms["move_ahead"],
-        moved_widths=moved_terms["widths"],
+        moved_slopes=moved_terms["slopes"],
         moved_behind=moved_terms["move_behind"],
         destination=file_path.with_name(new_name),
     )
@@ -964,8 +958,8 @@ def perform_rename(
         moved_parts.append(f"#↑: {', '.join(decision.moved_numbers_ahead)}")
     if decision.moved_ahead:
         moved_parts.append(f"↑: {', '.join(decision.moved_ahead)}")
-    if decision.moved_widths:
-        moved_parts.append(f"Width: {', '.join(decision.moved_widths)}")
+    if decision.moved_slopes:
+        moved_parts.append(f"Slope: {', '.join(decision.moved_slopes)}")
     if decision.moved_behind:
         moved_parts.append(f"↓: {', '.join(decision.moved_behind)}")
     if decision.moved_numbers_behind:
@@ -991,7 +985,7 @@ def perform_rename(
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Reorder width terms in font filenames to appear after the hyphen."
+        description="Reorder slope terms in font filenames to appear at the end."
     )
     parser.add_argument(
         "paths", nargs="+", help="File(s) and/or director(y/ies) to process"
@@ -1017,11 +1011,11 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         help="Skip preflight preview and proceed directly",
     )
     parser.add_argument(
-        "--add-width",
+        "--add-slope",
         action="append",
         default=[],
         metavar="TERM",
-        help="Add a custom width term to the dictionary",
+        help="Add a custom slope term to the dictionary",
     )
     parser.add_argument(
         "-ma",
@@ -1029,7 +1023,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         action="append",
         default=[],
         metavar="TERM",
-        help="Move specific term(s) ahead of width terms (repeatable, supports comma-separated). Example: -ma Alt reorders 'CondensedAlt' -> 'AltCondensed'",
+        help="Move specific term(s) ahead of slope terms (repeatable, supports comma-separated). Example: -ma Alt reorders 'ItalicAlt' -> 'AltItalic'",
     )
     parser.add_argument(
         "-mb",
@@ -1037,7 +1031,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         action="append",
         default=[],
         metavar="TERM",
-        help="Move specific term(s) behind width terms (repeatable, supports comma-separated). Example: -mb Curly reorders 'CurlyCondensed' -> 'CondensedCurly'",
+        help="Move specific term(s) behind slope terms (repeatable, supports comma-separated). Example: -mb OsF reorders 'OsFItalic' -> 'ItalicOsF'",
     )
     parser.add_argument(
         "-ma-num",
@@ -1045,7 +1039,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         nargs="?",
         const="",
         metavar="TERM",
-        help="Move number terms before width terms. With TERM: matches prefix+digits (e.g., 'No87') or digits+prefix (e.g., '87No'). Without TERM: extracts all standalone numbers. Examples: --move-ahead-number No (moves 'No87', '87No' before width), --move-ahead-number (moves all numbers before width)",
+        help="Move number terms before slope terms. With TERM: matches prefix+digits (e.g., 'No87') or digits+prefix (e.g., '87No'). Without TERM: extracts all standalone numbers. Examples: --move-ahead-number No (moves 'No87', '87No' before slope), --move-ahead-number (moves all numbers before slope)",
     )
     parser.add_argument(
         "-mb-num",
@@ -1053,7 +1047,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         nargs="?",
         const="",
         metavar="TERM",
-        help="Move number terms after width terms. With TERM: matches prefix+digits (e.g., 'No87') or digits+prefix (e.g., '87No'). Without TERM: extracts all standalone numbers. Examples: --move-behind-number No (moves 'No87', '87No' after width), --move-behind-number (moves all numbers after width)",
+        help="Move number terms after slope terms. With TERM: matches prefix+digits (e.g., 'No87') or digits+prefix (e.g., '87No'). Without TERM: extracts all standalone numbers. Examples: --move-behind-number No (moves 'No87', '87No' after slope), --move-behind-number (moves all numbers after slope)",
     )
     parser.add_argument(
         "--do-not-move",
@@ -1071,11 +1065,11 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def load_user_width_terms(args: argparse.Namespace) -> None:
-    """Add user-defined width terms to the extractor."""
-    for term in args.add_width or []:
+def load_user_slope_terms(args: argparse.Namespace) -> None:
+    """Add user-defined slope terms to the extractor."""
+    for term in args.add_slope or []:
         if term.strip():
-            WIDTH_EXTRACTOR.all_terms.add(term.strip())
+            SLOPE_EXTRACTOR.all_terms.add(term.strip())
 
 
 def parse_comma_separated_list(items: List[str]) -> List[str]:
@@ -1094,7 +1088,7 @@ def parse_comma_separated_list(items: List[str]) -> List[str]:
 def main(argv: Sequence[str]) -> int:
     """Main entry point."""
     args = parse_args(argv)
-    load_user_width_terms(args)
+    load_user_slope_terms(args)
 
     # Parse comma-separated configuration lists
     move_ahead_terms = parse_comma_separated_list(args.move_ahead)

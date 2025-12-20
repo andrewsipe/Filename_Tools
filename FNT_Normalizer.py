@@ -43,6 +43,7 @@ NORMALIZATION_DICT: dict[str, str] = {
     "trab": "trab",
     "tral": "tral",
     "trat": "trat",
+    "trah": "trah",
     "smallcaps": "Smallcaps",
     "typeface": "",
 }
@@ -94,6 +95,30 @@ def normalize_hyphens(text: str) -> str:
     """
     collapsed = re.sub(r"-{2,}", "-", text)
     return collapsed.strip("-")
+
+
+def remove_counter_suffix(filename: str) -> Tuple[str, bool]:
+    """
+    Remove ~### duplicate counter suffix from filename.
+
+    Pattern: ~### where ### is 3 digits (e.g., ~001, ~002)
+    Returns: (filename_without_counter, had_counter)
+
+    Example:
+        FontName-Bold~001.otf -> FontName-Bold.otf
+    """
+    # Match pattern like: FontName-Bold~001.otf
+    # Pattern matches ~ followed by 3 digits before the file extension
+    pattern = r"~(\d{3})(\.[^.]+)$"
+    match = re.search(pattern, filename)
+
+    if match:
+        # Remove the ~### part, keep the extension
+        base_name = filename[: match.start()]
+        extension = match.group(2)
+        return f"{base_name}{extension}", True
+
+    return filename, False
 
 
 # --- Normalization Logic ------------------------------------------------------------------------
@@ -197,13 +222,15 @@ def normalize_filename(filename: str) -> Tuple[str, List[str]]:
 def analyze_files(
     paths: List[Path],
     recursive: bool,
+    remove_counter: bool = False,
 ) -> dict:
     """
-    Analyze files to determine what terms will be normalized.
+    Analyze files to determine what terms will be normalized and/or counters removed.
     Returns dict with analysis data.
     """
     terms_found = set()
     files_with_changes = []
+    counters_removed = 0
 
     # Collect all font files using the file collector
     font_files = collector.collect_font_files(
@@ -214,11 +241,24 @@ def analyze_files(
     for file_path_str in font_files:
         file_path = Path(file_path_str)
         old_name = file_path.name
-        new_name, replaced_terms = normalize_filename(old_name)
 
-        # Only include files where the name actually changes
-        if replaced_terms and new_name != old_name:
-            files_with_changes.append((file_path, old_name, new_name, replaced_terms))
+        # Use compute_rename to get the final name (handles both normalization and counter removal)
+        decision = compute_rename(file_path, remove_counter=remove_counter)
+        new_name = decision.new_name
+        replaced_terms = decision.replaced_terms
+
+        # Check if counter was removed
+        had_counter = False
+        if remove_counter:
+            _, had_counter = remove_counter_suffix(old_name)
+            if had_counter:
+                counters_removed += 1
+
+        # Include files where the name actually changes (normalization or counter removal)
+        if new_name != old_name:
+            files_with_changes.append(
+                (file_path, old_name, new_name, replaced_terms, had_counter)
+            )
             terms_found.update(replaced_terms)
 
     # Sort files_with_changes alphabetically by filename
@@ -228,6 +268,7 @@ def analyze_files(
         "total_files": len(font_files),
         "files_with_changes": files_with_changes,
         "terms_found": sorted(terms_found),
+        "counters_removed": counters_removed,
     }
 
 
@@ -250,6 +291,12 @@ def show_preflight_preview(analysis: dict) -> None:
             f"{cs.indent(1)}Terms to normalize: {', '.join(analysis['terms_found'])}"
         )
 
+    # Show counter removal statistics
+    if analysis.get("counters_removed", 0) > 0:
+        cs.emit(
+            f"{cs.indent(1)}Counters to remove: {cs.fmt_count(analysis['counters_removed'])}"
+        )
+
     cs.emit("")
 
     # Show ALL changes with highlighted terms
@@ -263,9 +310,16 @@ def show_preflight_preview(analysis: dict) -> None:
                 table.add_column("Normalized", style="lighttext", no_wrap=False)
                 table.add_column("Terms", style="cyan", min_width=12)
 
-                for file_path, old_name, new_name, replaced_terms in analysis[
-                    "files_with_changes"
-                ]:
+                for file_entry in analysis["files_with_changes"]:
+                    # Handle both old format (4 elements) and new format (5 elements)
+                    if len(file_entry) == 5:
+                        file_path, old_name, new_name, replaced_terms, had_counter = (
+                            file_entry
+                        )
+                    else:
+                        file_path, old_name, new_name, replaced_terms = file_entry
+                        had_counter = False
+
                     # Build highlighted before/after strings
                     before_highlighted = highlight_terms_in_filename(
                         old_name, replaced_terms, style="before"
@@ -274,7 +328,13 @@ def show_preflight_preview(analysis: dict) -> None:
                         new_name, replaced_terms, style="after"
                     )
 
-                    terms_info = ", ".join(replaced_terms)
+                    # Build terms info string
+                    action_parts = []
+                    if replaced_terms:
+                        action_parts.append(", ".join(replaced_terms))
+                    if had_counter:
+                        action_parts.append("counter removed")
+                    terms_info = ", ".join(action_parts) if action_parts else ""
 
                     table.add_row(before_highlighted, after_highlighted, terms_info)
 
@@ -282,10 +342,22 @@ def show_preflight_preview(analysis: dict) -> None:
                 console.print(table)
         else:
             # Fallback for non-Rich environments
-            for file_path, old_name, new_name, replaced_terms in analysis[
-                "files_with_changes"
-            ]:
-                terms_info = f" (normalized: {', '.join(replaced_terms)})"
+            for file_entry in analysis["files_with_changes"]:
+                # Handle both old format (4 elements) and new format (5 elements)
+                if len(file_entry) == 5:
+                    file_path, old_name, new_name, replaced_terms, had_counter = (
+                        file_entry
+                    )
+                else:
+                    file_path, old_name, new_name, replaced_terms = file_entry
+                    had_counter = False
+
+                action_parts = []
+                if replaced_terms:
+                    action_parts.append(f"normalized: {', '.join(replaced_terms)}")
+                if had_counter:
+                    action_parts.append("counter removed")
+                terms_info = f" ({', '.join(action_parts)})" if action_parts else ""
                 cs.emit(f"{cs.indent(1)}{old_name} -> {new_name}{terms_info}")
 
     cs.emit("")
@@ -341,10 +413,14 @@ class RenameDecision:
     destination: Path
 
 
-def compute_rename(file_path: Path) -> RenameDecision:
+def compute_rename(file_path: Path, remove_counter: bool = False) -> RenameDecision:
     """Compute the rename decision for a file."""
     old_name = file_path.name
     new_name, replaced_terms = normalize_filename(old_name)
+
+    # Apply counter removal if requested (after normalization)
+    if remove_counter:
+        new_name, _ = remove_counter_suffix(new_name)
 
     return RenameDecision(
         old_name=old_name,
@@ -359,9 +435,10 @@ def perform_rename(
     *,
     dry_run: bool,
     verbose: bool,
+    remove_counter: bool = False,
 ) -> Tuple[bool, str | None]:
     """Perform the actual file rename operation."""
-    decision = compute_rename(file_path)
+    decision = compute_rename(file_path, remove_counter=remove_counter)
     if decision.new_name == decision.old_name:
         if verbose:
             cs.StatusIndicator("unchanged").add_file(str(file_path)).emit()
@@ -369,33 +446,47 @@ def perform_rename(
 
     destination = decision.destination
 
-    # Simple conflict handling: skip if destination exists and is a different file
+    # Check if counter was removed (for messaging and conflict detection)
+    _, had_counter = (
+        remove_counter_suffix(file_path.name)
+        if remove_counter
+        else (file_path.name, False)
+    )
+
+    # Conflict handling: skip if destination exists and is a different file
     # On case-insensitive filesystems (macOS), same file with different case will exist()
     # So we check if it's actually a different file (case-insensitively different name)
     if str(destination).lower() != str(file_path).lower() and destination.exists():
-        cs.StatusIndicator("warning").add_file(decision.new_name).with_explanation(
-            "exists, skipping"
-        ).emit()
+        # Special message for counter removal conflicts
+        if remove_counter and had_counter:
+            cs.StatusIndicator("warning").add_file(decision.new_name).with_explanation(
+                "would create duplicate, skipping (OS will handle if needed)"
+            ).emit()
+        else:
+            cs.StatusIndicator("warning").add_file(decision.new_name).with_explanation(
+                "exists, skipping"
+            ).emit()
         return False, None
 
-    # Build info string for replaced terms
-    terms_info = (
-        f" (normalized: {', '.join(decision.replaced_terms)})"
-        if decision.replaced_terms
-        else ""
-    )
+    # Build info string for replaced terms and counter removal
+    action_parts = []
+    if decision.replaced_terms:
+        action_parts.append(f"normalized: {', '.join(decision.replaced_terms)}")
+    if remove_counter and had_counter:
+        action_parts.append("counter removed")
+    terms_info = f" ({', '.join(action_parts)})" if action_parts else ""
 
     if dry_run:
         cs.StatusIndicator("info", dry_run=True).add_message(
-            f"DRY-RUN normalize{terms_info}"
+            f"DRY-RUN{terms_info}"
         ).add_values(old_value=decision.old_name, new_value=destination.name).emit()
         return True, None
 
     try:
         file_path.rename(destination)
-        cs.StatusIndicator("updated").add_message("normalize" + terms_info).add_values(
-            old_value=decision.old_name, new_value=destination.name
-        ).emit()
+        cs.StatusIndicator("updated").add_message(
+            terms_info.strip(" ()") or "rename"
+        ).add_values(old_value=decision.old_name, new_value=destination.name).emit()
         return True, None
     except Exception as exc:
         return False, f"rename failed for {file_path}: {exc}"
@@ -423,7 +514,18 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         action="store_true",
         help="Skip preflight preview and proceed directly",
     )
-    return parser.parse_args(argv)
+    parser.add_argument(
+        "--counter-remover",
+        action="store_true",
+        help="Remove ~### duplicate counters from filenames (cannot be used with --recursive)",
+    )
+    args = parser.parse_args(argv)
+
+    # Validate that --counter-remover is not used with --recursive
+    if args.counter_remover and args.recursive:
+        parser.error("--counter-remover cannot be used with --recursive")
+
+    return args
 
 
 def main(argv: Sequence[str]) -> int:
@@ -450,6 +552,7 @@ def main(argv: Sequence[str]) -> int:
         analysis = analyze_files(
             path_objects,
             args.recursive,
+            remove_counter=args.counter_remover,
         )
 
         if analysis["files_with_changes"]:
@@ -457,8 +560,13 @@ def main(argv: Sequence[str]) -> int:
 
             # Ask for confirmation unless dry-run
             if not args.dry_run:
+                action_description = "normalize terms in filenames"
+                if args.counter_remover:
+                    action_description = (
+                        "normalize terms and remove counters in filenames"
+                    )
                 if not cs.prompt_confirm(
-                    "Ready to normalize terms in filenames",
+                    f"Ready to {action_description}",
                     action_prompt="Proceed with renaming?",
                     default=True,
                 ):
@@ -483,6 +591,7 @@ def main(argv: Sequence[str]) -> int:
             file_path,
             dry_run=args.dry_run,
             verbose=args.verbose,
+            remove_counter=args.counter_remover,
         )
         if did_change:
             changed += 1

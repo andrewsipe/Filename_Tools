@@ -58,6 +58,10 @@ SLOPE_MODIFIERS: Set[str] = {
     "Super",
 }
 
+# Default move-ahead terms (automatically applied)
+# Order matters: Alt comes first, then Smallcaps variants
+DEFAULT_MOVE_AHEAD_TERMS: List[str] = ["Alt", "Smallcaps", "SmallCaps"]
+
 
 # --- TermExtractor Class ---------------------------------------------------------------------
 
@@ -431,6 +435,17 @@ def is_variable_font(filename: str) -> bool:
     return any(indicator in stem_lower for indicator in ["variable", "var", "vf"])
 
 
+def normalize_smallcaps_term(term: str) -> str:
+    """
+    Normalize SmallCaps case variations to consistent "Smallcaps" format.
+
+    Converts "SmallCaps" → "Smallcaps" while preserving other terms unchanged.
+    """
+    if term == "SmallCaps":
+        return "Smallcaps"
+    return term
+
+
 # --- Slope Reordering Logic --------------------------------------------------------------------
 
 
@@ -492,14 +507,27 @@ def extract_all_terms_from_parts(
         )
 
     # Extract move_ahead terms
+    # Merge default terms with user-provided terms (defaults come first to maintain order)
+    all_move_ahead_terms = DEFAULT_MOVE_AHEAD_TERMS.copy()
     if move_ahead_terms:
+        # Add user terms that aren't already in defaults
+        for term in move_ahead_terms:
+            if term not in all_move_ahead_terms:
+                all_move_ahead_terms.append(term)
+
+    if all_move_ahead_terms:
         clean_family, family_move_ahead = TermExtractor.extract_auxiliary_terms(
-            clean_family, move_ahead_terms
+            clean_family, all_move_ahead_terms
         )
         clean_style, style_move_ahead = TermExtractor.extract_auxiliary_terms(
-            clean_style, move_ahead_terms
+            clean_style, all_move_ahead_terms
         )
-        moved_terms["move_ahead"] = family_move_ahead + style_move_ahead
+        # Normalize SmallCaps to Smallcaps
+        normalized_terms = [
+            normalize_smallcaps_term(term)
+            for term in family_move_ahead + style_move_ahead
+        ]
+        moved_terms["move_ahead"] = normalized_terms
 
     # Extract slope terms (always)
     clean_family, family_slopes = extract_slope_terms(clean_family)

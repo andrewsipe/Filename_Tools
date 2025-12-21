@@ -228,9 +228,8 @@ def convert_numbers_in_segment(
         if _is_single_digit_number(words[i]):
             # Count how many consecutive single-digit numbers we have
             consecutive_count = 1
-            while (
-                i + consecutive_count < len(words)
-                and _is_single_digit_number(words[i + consecutive_count])
+            while i + consecutive_count < len(words) and _is_single_digit_number(
+                words[i + consecutive_count]
             ):
                 consecutive_count += 1
 

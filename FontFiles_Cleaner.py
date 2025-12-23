@@ -64,8 +64,9 @@ except ImportError:
             return self
 
         def build(self) -> str:
-            prefix = "DRY-RUN " if self.dry_run else ""
-            return f"{prefix}{self.status}: {' '.join(self.parts)}"
+            # DRY prefix is handled by the real StatusIndicator when available
+            # This fallback doesn't need to add it manually
+            return f"{self.status}: {' '.join(self.parts)}"
 
         def emit(self) -> None:
             print(self.build())

@@ -501,20 +501,21 @@ def cleanup_numbered_duplicates(
         clean_name = f"{base}{ext}"
         clean_path = file_path.with_name(clean_name)
         if not clean_path.exists():
+            # Use same StatusIndicator for both dry-run and normal mode
+            # DRY prefix will be added automatically when dry_run=True
+            cs.StatusIndicator("updated", dry_run=dry_run).add_message("cleanup").add_values(
+                old_value=file_path.name, new_value=clean_name
+            ).emit()
+
             if dry_run:
-                cs.StatusIndicator("info", dry_run=True).add_message(
-                    "DRY-RUN cleanup"
-                ).add_values(old_value=file_path.name, new_value=clean_name).emit()
-            else:
-                try:
-                    file_path.rename(clean_path)
-                    cs.StatusIndicator("updated").add_message("cleanup").add_values(
-                        old_value=file_path.name, new_value=clean_name
-                    ).emit()
-                except Exception as exc:  # noqa: BLE001
-                    cs.StatusIndicator("error").add_file(
-                        str(file_path)
-                    ).with_explanation(f"cleanup failed: {exc}").emit()
+                continue
+
+            try:
+                file_path.rename(clean_path)
+            except Exception as exc:  # noqa: BLE001
+                cs.StatusIndicator("error", dry_run=dry_run).add_file(
+                    str(file_path)
+                ).with_explanation(f"cleanup failed: {exc}").emit()
         elif verbose:
             cs.StatusIndicator("unchanged").add_file(file_path.name).with_explanation(
                 "cleanup skip (exists)"
@@ -548,17 +549,17 @@ def perform_rename(
             destination = ensure_unique_destination(destination)
         # overwrite: proceed
 
+    # Use same StatusIndicator for both dry-run and normal mode
+    # DRY prefix will be added automatically when dry_run=True
+    cs.StatusIndicator("updated", dry_run=dry_run).add_message("rename").add_values(
+        old_value=original_value, new_value=destination.name
+    ).emit()
+
     if dry_run:
-        cs.StatusIndicator("info", dry_run=True).add_message(
-            "DRY-RUN rename"
-        ).add_values(old_value=original_value, new_value=destination.name).emit()
         return True, None
 
     try:
         file_path.rename(destination)
-        cs.StatusIndicator("updated").add_message("rename").add_values(
-            old_value=original_value, new_value=destination.name
-        ).emit()
         return True, None
     except Exception as exc:  # noqa: BLE001
         return False, f"rename failed for {file_path}: {exc}"

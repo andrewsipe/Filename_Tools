@@ -52,6 +52,8 @@ NORMALIZATION_DICT: dict[str, str] = {
 CASE_SENSITIVE_DICT: dict[str, str] = {
     "It.": "Italic.",
     "Ita.": "Italic.",
+    "Ital.": "Italic.",
+    "Itali.": "Italic.",
     "Obl.": "Oblique.",
     "Obliq.": "Oblique.",
     "SC.": "Smallcaps.",
@@ -476,17 +478,18 @@ def perform_rename(
         action_parts.append("counter removed")
     terms_info = f" ({', '.join(action_parts)})" if action_parts else ""
 
+    # Use same StatusIndicator for both dry-run and normal mode
+    # DRY prefix will be added automatically when dry_run=True
+    message = terms_info.strip(" ()") or "rename"
+    cs.StatusIndicator("updated", dry_run=dry_run).add_message(
+        message
+    ).add_values(old_value=decision.old_name, new_value=destination.name).emit()
+
     if dry_run:
-        cs.StatusIndicator("info", dry_run=True).add_message(
-            f"DRY-RUN{terms_info}"
-        ).add_values(old_value=decision.old_name, new_value=destination.name).emit()
         return True, None
 
     try:
         file_path.rename(destination)
-        cs.StatusIndicator("updated").add_message(
-            terms_info.strip(" ()") or "rename"
-        ).add_values(old_value=decision.old_name, new_value=destination.name).emit()
         return True, None
     except Exception as exc:
         return False, f"rename failed for {file_path}: {exc}"

@@ -446,6 +446,94 @@ def normalize_smallcaps_term(term: str) -> str:
     return term
 
 
+def extract_counter_suffix(stem: str) -> Tuple[str, str, bool]:
+    """
+    Extract duplicate/copy counter suffix from the end of a filename stem.
+
+    Detects counter formats at the very end of the stem (before extension):
+    - ~### (tilde + 3 digits, e.g., ~001, ~002)
+    - space + digits (e.g., " 2", " 10")
+    - hash + digits (e.g., "#2", "#10")
+    - space + "copy" (case-insensitive, e.g., " copy", " Copy")
+
+    Args:
+        stem: Filename stem (without extension)
+
+    Returns:
+        Tuple of (stem_without_counter, counter_string, had_counter)
+        If no counter found, returns (stem, "", False)
+
+    Examples:
+        "FontName-Bold~001" -> ("FontName-Bold", "~001", True)
+        "FontName-Regular 2" -> ("FontName-Regular", " 2", True)
+        "FontName-Regular#2" -> ("FontName-Regular", "#2", True)
+        "FontName-Regular copy" -> ("FontName-Regular", " copy", True)
+        "FontName#2-Regular" -> ("FontName#2-Regular", "", False)  # Not at end
+    """
+    if not stem:
+        return stem, "", False
+
+    # Try patterns in order of specificity (more specific first)
+    # Pattern 1: ~### (tilde + exactly 3 digits)
+    tilde_pattern = re.compile(r"~(\d{3})$")
+    match = tilde_pattern.search(stem)
+    if match:
+        counter = match.group(0)  # Full match including ~
+        clean_stem = stem[: match.start()]
+        return clean_stem, counter, True
+
+    # Pattern 2:  copy (space + "copy", case-insensitive)
+    copy_pattern = re.compile(r" copy$", re.IGNORECASE)
+    match = copy_pattern.search(stem)
+    if match:
+        counter = match.group(0)  # Full match including space
+        clean_stem = stem[: match.start()]
+        return clean_stem, counter, True
+
+    # Pattern 3:  # (space + one or more digits)
+    space_digits_pattern = re.compile(r" (\d+)$")
+    match = space_digits_pattern.search(stem)
+    if match:
+        counter = match.group(0)  # Full match including space
+        clean_stem = stem[: match.start()]
+        return clean_stem, counter, True
+
+    # Pattern 4: # (hash + one or more digits)
+    hash_digits_pattern = re.compile(r"#(\d+)$")
+    match = hash_digits_pattern.search(stem)
+    if match:
+        counter = match.group(0)  # Full match including #
+        clean_stem = stem[: match.start()]
+        return clean_stem, counter, True
+
+    # No counter found
+    return stem, "", False
+
+
+def extract_counter_from_filename(filename: str) -> Tuple[str, str, str]:
+    """
+    Extract counter suffix from a full filename.
+
+    Splits filename into stem and extension, then extracts counter from stem.
+    Returns the clean stem (without counter), counter string, and extension.
+
+    Args:
+        filename: Full filename with extension
+
+    Returns:
+        Tuple of (clean_stem, counter, extension)
+        If no counter found, counter will be empty string
+
+    Examples:
+        "FontName-Bold~001.otf" -> ("FontName-Bold", "~001", ".otf")
+        "FontName-Regular 2.ttf" -> ("FontName-Regular", " 2", ".ttf")
+        "FontName-Regular.otf" -> ("FontName-Regular", "", ".otf")
+    """
+    stem, extension = split_stem_and_suffixes(filename)
+    clean_stem, counter, _ = extract_counter_suffix(stem)
+    return clean_stem, counter, extension
+
+
 # --- Slope Reordering Logic --------------------------------------------------------------------
 
 
@@ -571,6 +659,9 @@ def build_new_filename(
     """
     Process a filename and reorder terms (numbers, move-ahead, slopes, move-behind).
 
+    Preserves duplicate/copy counter suffixes (e.g., ~001, #2, " 2", " copy") at the end,
+    inserting moved terms before the counter.
+
     Returns (new_filename, dict_of_moved_terms) where dict contains:
     - 'numbers_ahead': List of moved number terms (before slope)
     - 'numbers_behind': List of moved number terms (after slope)
@@ -582,8 +673,9 @@ def build_new_filename(
     if is_variable_font(original_name):
         return original_name, create_empty_moved_terms_dict()
 
-    stem, suffixes = split_stem_and_suffixes(original_name)
-    if not stem:
+    # Extract counter from filename before processing
+    clean_stem, counter, extension = extract_counter_from_filename(original_name)
+    if not clean_stem:
         return original_name, create_empty_moved_terms_dict()
 
     # Normalize parameters
@@ -592,8 +684,8 @@ def build_new_filename(
     ignore_families = ignore_families or []
 
     # Process hyphenated filename
-    if "-" in stem:
-        parts = stem.rsplit("-", 1)
+    if "-" in clean_stem:
+        parts = clean_stem.rsplit("-", 1)
         if not (parts[0] and parts[1]):
             return original_name, create_empty_moved_terms_dict()
 
@@ -612,7 +704,7 @@ def build_new_filename(
         if not any(moved_terms.values()):
             return original_name, create_empty_moved_terms_dict()
 
-        # Build final name: CleanFamily-CleanStyle+NumbersAhead+MoveAhead+Slopes+MoveBehind+NumbersBehind
+        # Build final name: CleanFamily-CleanStyle+NumbersAhead+MoveAhead+Slopes+MoveBehind+NumbersBehind+Counter
         all_terms = "".join(
             moved_terms["numbers_ahead"]
             + moved_terms["move_ahead"]
@@ -620,12 +712,12 @@ def build_new_filename(
             + moved_terms["move_behind"]
             + moved_terms["numbers_behind"]
         )
-        final_stem = f"{clean_family}-{clean_style}{all_terms}"
-        return f"{final_stem}{suffixes}", moved_terms
+        final_stem = f"{clean_family}-{clean_style}{all_terms}{counter}"
+        return f"{final_stem}{extension}", moved_terms
 
     # Process non-hyphenated filename
-    clean_stem, _, moved_terms = extract_all_terms_from_parts(
-        stem,
+    processed_stem, _, moved_terms = extract_all_terms_from_parts(
+        clean_stem,
         "",
         move_ahead_terms,
         move_behind_terms,
@@ -643,8 +735,8 @@ def build_new_filename(
             + moved_terms["move_behind"]
             + moved_terms["numbers_behind"]
         )
-        final_stem = f"{clean_stem}-{all_terms}"
-        return f"{final_stem}{suffixes}", moved_terms
+        final_stem = f"{processed_stem}-{all_terms}{counter}"
+        return f"{final_stem}{extension}", moved_terms
 
     return original_name, create_empty_moved_terms_dict()
 
@@ -994,17 +1086,17 @@ def perform_rename(
         moved_parts.append(f"#↓: {', '.join(decision.moved_numbers_behind)}")
     terms_info = f" ({'; '.join(moved_parts)})" if moved_parts else ""
 
+    # Use same StatusIndicator for both dry-run and normal mode
+    # DRY prefix will be added automatically when dry_run=True
+    cs.StatusIndicator("updated", dry_run=dry_run).add_message(
+        "rename" + terms_info
+    ).add_values(old_value=decision.old_name, new_value=destination.name).emit()
+
     if dry_run:
-        cs.StatusIndicator("info", dry_run=True).add_message(
-            f"DRY-RUN rename{terms_info}"
-        ).add_values(old_value=decision.old_name, new_value=destination.name).emit()
         return True, None
 
     try:
         file_path.rename(destination)
-        cs.StatusIndicator("updated").add_message("rename" + terms_info).add_values(
-            old_value=decision.old_name, new_value=destination.name
-        ).emit()
         return True, None
     except Exception as exc:
         return False, f"rename failed for {file_path}: {exc}"

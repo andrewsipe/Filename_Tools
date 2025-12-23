@@ -392,17 +392,17 @@ def perform_rename(
             destination = ensure_unique_destination(destination)
         # overwrite: proceed
 
+    # Use same StatusIndicator for both dry-run and normal mode
+    # DRY prefix will be added automatically when dry_run=True
+    cs.StatusIndicator("updated", dry_run=dry_run).add_message(
+        f"rename in {cs.fmt_file(str(file_path.parent))}"
+    ).add_values(old_value=decision.old_name, new_value=destination.name).emit()
+
     if dry_run:
-        cs.StatusIndicator("info", dry_run=True).add_message(
-            f"DRY-RUN rename in {cs.fmt_file(str(file_path.parent))}"
-        ).add_values(old_value=decision.old_name, new_value=destination.name).emit()
         return True, None
 
     try:
         file_path.rename(destination)
-        cs.StatusIndicator("updated").add_message(
-            f"in {cs.fmt_file(str(file_path.parent))}"
-        ).add_values(old_value=decision.old_name, new_value=destination.name).emit()
         return True, None
     except Exception as exc:  # noqa: BLE001
         return False, f"rename failed for {file_path}: {exc}"

@@ -169,22 +169,23 @@ def cleanup_numbered_duplicates(
 
         clean_path = file_path.with_name(clean_name)
         if not clean_path.exists():
+            # Use same StatusIndicator for both dry-run and normal mode
+            # DRY prefix will be added automatically when dry_run=True
+            cs.StatusIndicator("updated", dry_run=dry_run).add_message("cleanup").add_values(
+                old_value=file_path.name, new_value=clean_name
+            ).emit()
+
             if dry_run:
-                cs.StatusIndicator("info", dry_run=True).add_message(
-                    "CLEANUP DRY-RUN"
-                ).add_values(old_value=file_path.name, new_value=clean_name).emit()
-            else:
-                try:
-                    file_path.rename(clean_path)
-                    cs.StatusIndicator("updated").add_message("cleanup").add_values(
-                        old_value=file_path.name, new_value=clean_name
-                    ).emit()
-                except Exception as exc:
-                    cs.StatusIndicator("error").add_file(
-                        file_path.name
-                    ).with_explanation(
-                        f"cleanup error: failed to rename {file_path.name} -> {clean_name}: {exc}"
-                    ).emit()
+                continue
+
+            try:
+                file_path.rename(clean_path)
+            except Exception as exc:
+                cs.StatusIndicator("error", dry_run=dry_run).add_file(
+                    file_path.name
+                ).with_explanation(
+                    f"cleanup error: failed to rename {file_path.name} -> {clean_name}: {exc}"
+                ).emit()
         elif verbose:
             cs.StatusIndicator("unchanged").add_file(file_path.name).with_explanation(
                 "cleanup skip (target exists)"
@@ -225,17 +226,17 @@ def perform_rename(
             destination = ensure_unique_destination(destination)
         # elif conflict_strategy == "overwrite": proceed with rename (will overwrite)
 
+    # Use same StatusIndicator for both dry-run and normal mode
+    # DRY prefix will be added automatically when dry_run=True
+    cs.StatusIndicator("updated", dry_run=dry_run).add_message("renamed").add_values(
+        old_value=file_path.name, new_value=destination.name
+    ).emit()
+
     if dry_run:
-        cs.StatusIndicator("info", dry_run=True).add_message("DRY-RUN").add_values(
-            old_value=file_path.name, new_value=destination.name
-        ).emit()
         return
 
     try:
         file_path.rename(destination)
-        cs.StatusIndicator("updated").add_message("renamed").add_values(
-            old_value=file_path.name, new_value=destination.name
-        ).emit()
     except Exception as exc:  # noqa: BLE001
         cs.StatusIndicator("error").add_file(str(file_path)).with_explanation(
             f"Error: failed to rename {file_path} -> {destination.name}: {exc}"

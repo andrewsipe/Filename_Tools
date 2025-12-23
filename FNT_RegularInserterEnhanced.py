@@ -338,27 +338,22 @@ def perform_rename(
                 destination = destination.with_name(f"{stem} ({counter}){suffixes}")
                 counter += 1
 
+    # Use same StatusIndicator for both dry-run and normal mode
+    # DRY prefix will be added automatically when dry_run=True
+    msg = (
+        cs.StatusIndicator("updated", dry_run=dry_run)
+        .add_message("rename")
+        .add_values(old_value=decision.old_name, new_value=destination.name)
+    )
+    if show_reason:
+        msg = msg.with_explanation(f"reason: {decision.reason}")
+    msg.emit()
+
     if dry_run:
-        msg = (
-            cs.StatusIndicator("info", dry_run=True)
-            .add_message("DRY-RUN rename")
-            .add_values(old_value=decision.old_name, new_value=destination.name)
-        )
-        if show_reason:
-            msg = msg.with_explanation(f"reason: {decision.reason}")
-        msg.emit()
         return True, None
 
     try:
         file_path.rename(destination)
-        msg = (
-            cs.StatusIndicator("updated")
-            .add_message("rename")
-            .add_values(old_value=decision.old_name, new_value=destination.name)
-        )
-        if show_reason:
-            msg = msg.with_explanation(f"reason: {decision.reason}")
-        msg.emit()
         return True, None
     except Exception as exc:
         return False, f"rename failed for {file_path}: {exc}"

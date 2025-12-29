@@ -793,9 +793,7 @@ def perform_var_name_normalization(
             # DRY prefix will be added automatically when dry_run=True
             cs.StatusIndicator("updated", dry_run=dry_run).add_file(
                 str(file_path)
-            ).add_message("name table").add_field(
-                "updated_records", updated
-            ).emit()
+            ).add_message("name table").add_field("updated_records", updated).emit()
             try:
                 font.close()
             except Exception:
@@ -811,9 +809,9 @@ def perform_var_name_normalization(
             except Exception:
                 pass
 
-        cs.StatusIndicator("updated", dry_run=dry_run).add_file(str(file_path)).add_message(
-            "name table"
-        ).add_field("updated_records", updated).emit()
+        cs.StatusIndicator("updated", dry_run=dry_run).add_file(
+            str(file_path)
+        ).add_message("name table").add_field("updated_records", updated).emit()
         return True, None
     except Exception as exc:  # noqa: BLE001
         try:

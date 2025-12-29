@@ -434,9 +434,7 @@ def perform_rename(
 
     # Build terms_info once for both modes
     terms_info = (
-        f" (moved: {', '.join(decision.moved_terms)})"
-        if decision.moved_terms
-        else ""
+        f" (moved: {', '.join(decision.moved_terms)})" if decision.moved_terms else ""
     )
 
     # Use same StatusIndicator for both dry-run and normal mode

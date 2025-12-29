@@ -481,9 +481,9 @@ def perform_rename(
     # Use same StatusIndicator for both dry-run and normal mode
     # DRY prefix will be added automatically when dry_run=True
     message = terms_info.strip(" ()") or "rename"
-    cs.StatusIndicator("updated", dry_run=dry_run).add_message(
-        message
-    ).add_values(old_value=decision.old_name, new_value=destination.name).emit()
+    cs.StatusIndicator("updated", dry_run=dry_run).add_message(message).add_values(
+        old_value=decision.old_name, new_value=destination.name
+    ).emit()
 
     if dry_run:
         return True, None

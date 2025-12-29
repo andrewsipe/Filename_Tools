@@ -503,9 +503,9 @@ def cleanup_numbered_duplicates(
         if not clean_path.exists():
             # Use same StatusIndicator for both dry-run and normal mode
             # DRY prefix will be added automatically when dry_run=True
-            cs.StatusIndicator("updated", dry_run=dry_run).add_message("cleanup").add_values(
-                old_value=file_path.name, new_value=clean_name
-            ).emit()
+            cs.StatusIndicator("updated", dry_run=dry_run).add_message(
+                "cleanup"
+            ).add_values(old_value=file_path.name, new_value=clean_name).emit()
 
             if dry_run:
                 continue

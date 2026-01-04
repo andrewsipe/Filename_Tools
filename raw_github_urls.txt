@@ -1,4 +1,5 @@
 # Root directory
+https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/.gitmodules
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_AbbreviationsExpander.py
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_CapitalizeAfterHyphen.py
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_CompoundWordNormalizer.py
@@ -15,6 +16,7 @@ https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_ReorderSlop
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_ReorderWidths.py
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_StyleNameExpander.py
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_WordDeduplicator.py
+https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FontCore
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FontFiles_Cleaner.py
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/README.md
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/pyproject.toml

@@ -3,6 +3,18 @@
 Capitalize the first letter and the first letter after each hyphen/underscore/space in filenames.
 Underscores and spaces are then removed; hyphens are preserved.
 
+Optional post-passes on the basename stem:
+
+  -w, --widths
+      After FontCore width tokens (Condensed, ExtraWide, ...), uppercase only the
+      next character when it is lowercase (e.g. Condensedbold); existing capitals
+      are left as-is.
+
+  -F, --find LIST
+      Comma-separated substrings; each match (case-insensitive) is left as-is.
+      Only a following lowercase letter is uppercased (Cutb -> CutB); existing
+      capitals are not changed. Example: -F 'Cut,Rough,Print'
+
 Examples:
   my-file.ttf          -> My-File.ttf
   my_file_name.otf     -> MyFileName.otf
@@ -19,9 +31,9 @@ Safety:
 - Use --no-cleanup to keep " (n)" suffixes when they're created.
 
 Usage:
-  python CapitalizeAfterHyphen.py PATH [PATH ...]
-  python CapitalizeAfterHyphen.py DIR -r
-  python CapitalizeAfterHyphen.py DIR --no-cleanup  # Keep " (n)" suffixes
+  python FNT_CapitalizeAfterHyphen.py PATH [PATH ...]
+  python FNT_CapitalizeAfterHyphen.py DIR -r -w -F Cut,Rough
+  python FNT_CapitalizeAfterHyphen.py DIR --no-cleanup  # Keep " (n)" suffixes
 """
 
 from __future__ import annotations
@@ -30,7 +42,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
-from typing import Iterable, Tuple
+from typing import Iterable, Sequence, Tuple
 
 # Add project root to path for FontCore imports (works for root and subdirectory scripts)
 # ruff: noqa: E402
@@ -43,6 +55,7 @@ if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
 
 import FontCore.core_console_styles as cs
+from FontCore.core_font_style_dictionaries import ALL_WIDTH_TERMS
 
 
 def transform_segment_capitalize_after_hyphen(text: str) -> str:
@@ -78,7 +91,81 @@ def transform_segment_capitalize_after_hyphen(text: str) -> str:
     return "".join(out)
 
 
-def build_new_filename(original_name: str, include_extension: bool) -> str:
+def _sorted_width_terms_by_length(width_terms: Iterable[str]) -> list[str]:
+    """Longest-first so e.g. ExtraCondensed matches before Condensed."""
+    return sorted(set(width_terms), key=len, reverse=True)
+
+
+def capitalize_after_width_terms(text: str, width_terms: Iterable[str]) -> str:
+    """After each case-insensitive width token, uppercase the following char only when it is a
+    lowercase letter; uppercase (or non-letter) is left unchanged."""
+    terms = _sorted_width_terms_by_length(width_terms)
+    if not terms or not text:
+        return text
+
+    out: list[str] = []
+    i = 0
+    while i < len(text):
+        matched_len = 0
+        for term in terms:
+            tl = len(term)
+            if i + tl <= len(text) and text[i : i + tl].lower() == term.lower():
+                matched_len = tl
+                break
+        if matched_len:
+            end = i + matched_len
+            out.append(text[i:end])
+            if end < len(text):
+                nxt = text[end]
+                if nxt.isalpha() and nxt.islower():
+                    out.append(nxt.upper())
+                    i = end + 1
+                    continue
+            i = end
+        else:
+            out.append(text[i])
+            i += 1
+
+    return "".join(out)
+
+
+def capitalize_after_needles(text: str, needles: Sequence[str]) -> str:
+    """For each needle, scan left-to-right (non-overlapping). After each match, uppercase the next
+    character only if it is a lowercase letter; otherwise leave the string unchanged at that spot."""
+    s = text
+    for raw in needles:
+        needle = raw.strip()
+        if not needle:
+            continue
+        nl = needle.lower()
+        nlen = len(needle)
+        parts: list[str] = []
+        i = 0
+        while i < len(s):
+            if i + nlen <= len(s) and s[i : i + nlen].lower() == nl:
+                end = i + nlen
+                parts.append(s[i:end])
+                if end < len(s):
+                    c = s[end]
+                    if c.isalpha() and c.islower():
+                        parts.append(c.upper())
+                        i = end + 1
+                        continue
+                i = end
+            else:
+                parts.append(s[i])
+                i += 1
+        s = "".join(parts)
+    return s
+
+
+def build_new_filename(
+    original_name: str,
+    include_extension: bool,
+    *,
+    widths: bool = False,
+    find_needles: Sequence[str] | None = None,
+) -> str:
     """Construct a new filename by transforming characters after '-'.
 
     If include_extension is False, transforms only the stem, preserving
@@ -86,11 +173,20 @@ def build_new_filename(original_name: str, include_extension: bool) -> str:
     """
     original_path = Path(original_name)
     if include_extension:
-        return transform_segment_capitalize_after_hyphen(original_path.name)
+        transformed = transform_segment_capitalize_after_hyphen(original_path.name)
+        if widths:
+            transformed = capitalize_after_width_terms(transformed, ALL_WIDTH_TERMS)
+        if find_needles:
+            transformed = capitalize_after_needles(transformed, find_needles)
+        return transformed
 
     stem = original_path.stem
     suffix = "".join(original_path.suffixes)
     new_stem = transform_segment_capitalize_after_hyphen(stem)
+    if widths:
+        new_stem = capitalize_after_width_terms(new_stem, ALL_WIDTH_TERMS)
+    if find_needles:
+        new_stem = capitalize_after_needles(new_stem, find_needles)
     return f"{new_stem}{suffix}"
 
 
@@ -192,10 +288,21 @@ def cleanup_numbered_duplicates(
             ).emit()
 
 
-def compute_rename(file_path: Path, include_extension: bool) -> Tuple[str, str]:
+def compute_rename(
+    file_path: Path,
+    include_extension: bool,
+    *,
+    widths: bool = False,
+    find_needles: Sequence[str] | None = None,
+) -> Tuple[str, str]:
     """Compute old->new name mapping (basename only), without touching disk."""
     old_name = file_path.name
-    new_name = build_new_filename(old_name, include_extension)
+    new_name = build_new_filename(
+        old_name,
+        include_extension,
+        widths=widths,
+        find_needles=find_needles,
+    )
     return old_name, new_name
 
 
@@ -205,8 +312,16 @@ def perform_rename(
     dry_run: bool,
     conflict_strategy: str,
     verbose: bool,
+    *,
+    widths: bool = False,
+    find_needles: Sequence[str] | None = None,
 ) -> None:
-    old_name, new_name = compute_rename(file_path, include_extension)
+    old_name, new_name = compute_rename(
+        file_path,
+        include_extension,
+        widths=widths,
+        find_needles=find_needles,
+    )
 
     if new_name == old_name:
         if verbose:
@@ -267,6 +382,26 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
         help="Also transform the extension portion",
     )
     parser.add_argument(
+        "-w",
+        "--widths",
+        action="store_true",
+        help=(
+            "After FontCore width terms, uppercase only the following character when "
+            "it is a lowercase letter; already-uppercase is unchanged "
+            "(e.g. condensedbold -> CondensedBold)."
+        ),
+    )
+    parser.add_argument(
+        "-F",
+        "--find",
+        metavar="WORDS",
+        help=(
+            'Comma-separated substrings: after each match, uppercase only the following '
+            "character when it is lowercase; leave existing capitals untouched. "
+            'Case-insensitive match (e.g. -F Cut,Rough).'
+        ),
+    )
+    parser.add_argument(
         "-n",
         "--dry-run",
         action="store_true",
@@ -314,6 +449,9 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
 def main(argv: Iterable[str]) -> int:
     args = parse_args(argv)
     any_target = False
+    find_needles: list[str] = []
+    if args.find:
+        find_needles = [p.strip() for p in args.find.split(",") if p.strip()]
 
     # Main renaming pass
     for raw_path in args.paths:
@@ -332,6 +470,8 @@ def main(argv: Iterable[str]) -> int:
                 dry_run=args.dry_run,
                 conflict_strategy=args.conflict,
                 verbose=args.verbose,
+                widths=args.widths,
+                find_needles=find_needles or None,
             )
 
     # Cleanup pass to remove " (n)" suffixes

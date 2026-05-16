@@ -5,9 +5,14 @@ Normalize specific terms in font filenames using case-insensitive find-and-repla
 Focus: Replace case variations of specific terms with their normalized forms.
 
 Logic:
-1. For each term in the normalization dictionary, find the first case-insensitive match.
-2. Replace the matched term with its normalized form.
-3. Process all dictionary terms for each filename.
+1. Process case-sensitive and case-insensitive dictionary replacements on the stem.
+2. Strip spaces; collapse duplicated hyphens so patterns like Semi--Bold normalize.
+3. For Semi/Extra/Demi/Super/Ultra anchored after start or '-', strip the hyphen before the tail
+   (de-hyphen), then apply COMPOUND_NORMALIZATIONS casing only when the merged token matches a
+   dict key — otherwise preserve the tail's original casing (e.g. Ultra-Condensed → UltraCondensed).
+4. Remaining hyphen keys from the dict (Small-Caps, Round-ed, …) merge when (^|-)(left)-(right).
+
+The (^|-) guard leaves FontSemi-Bold unchanged: no hyphen between the family and Semi.
 """
 
 from __future__ import annotations
@@ -31,6 +36,7 @@ if str(_project_root) not in sys.path:
 
 import FontCore.core_console_styles as cs
 import FontCore.core_file_collector as collector
+from FontCore.core_font_style_dictionaries import COMPOUND_NORMALIZATIONS
 
 
 # --- Normalization Dictionary ---------------------------------------------------------------------
@@ -97,6 +103,111 @@ def normalize_hyphens(text: str) -> str:
     """
     collapsed = re.sub(r"-{2,}", "-", text)
     return collapsed.strip("-")
+
+
+# CamelCase COMPOUND keys excluded from ci camel map (handled via literals or other paths).
+_COMPOUND_HYPHEN_SKIP_CAMEL = frozenset({
+    "SmallCaps",
+    "ItalicSmallCaps",
+    "ObliqueSmallCaps",
+})
+
+# Modifiers: (^|-)(Mod)-(tail) → de-hyphen, then COMPOUND camel lookup for casing only.
+_MODIFIER_HYPHEN_WORDS = ("Ultra", "Super", "Extra", "Demi", "Semi")
+_MODIFIER_REGEX_PART = "|".join(
+    re.escape(w) for w in sorted(_MODIFIER_HYPHEN_WORDS, key=len, reverse=True)
+)
+_MODIFIER_CANONICAL: dict[str, str] = {
+    m.lower(): m for m in _MODIFIER_HYPHEN_WORDS
+}
+
+_ci_compound_camel_lookup: dict[str, str] | None = None
+_literal_hyphen_merge_cache: List[Tuple[str, str, str]] | None = None
+
+
+def _ci_compound_camel_value_map() -> dict[str, str]:
+    """Lowercased CamelCase COMPOUND keys (no hyphen/space) → canonical replacement."""
+
+    global _ci_compound_camel_lookup
+    if _ci_compound_camel_lookup is not None:
+        return _ci_compound_camel_lookup
+    lookup: dict[str, str] = {}
+    for key, value in COMPOUND_NORMALIZATIONS.items():
+        if key.startswith("Variable") or " " in key or key == "--":
+            continue
+        if "-" in key:
+            continue
+        if key in _COMPOUND_HYPHEN_SKIP_CAMEL:
+            continue
+        lookup[key.lower()] = value
+    _ci_compound_camel_lookup = lookup
+    return _ci_compound_camel_lookup
+
+
+def literal_hyphen_merge_specs() -> List[Tuple[str, str, str]]:
+    """Single-hyphen dict entries whose left segment is not Semi/Extra/Demi/Super/Ultra."""
+
+    global _literal_hyphen_merge_cache
+    if _literal_hyphen_merge_cache is not None:
+        return _literal_hyphen_merge_cache
+
+    mod_roots = frozenset(_MODIFIER_HYPHEN_WORDS)
+    specs: dict[tuple[str, str], str] = {}
+    for key, canonical in COMPOUND_NORMALIZATIONS.items():
+        if "--" == key or key.startswith("Variable") or " " in key:
+            continue
+        if "-" not in key:
+            continue
+        parts = key.split("-", 1)
+        if len(parts) != 2:
+            continue
+        left, right = parts[0], parts[1]
+        if not left or not right:
+            continue
+        if left in mod_roots:
+            continue
+        specs[left, right] = canonical
+    out = [(a, b, specs[a, b]) for a, b in specs]
+    out.sort(key=lambda t: len(t[0]) + len(t[1]), reverse=True)
+    _literal_hyphen_merge_cache = out
+    return out
+
+
+def sanitize_modifier_hyphens(stem: str) -> str:
+    """
+    Strip the hyphen between (Semi|Extra|Demi|Super|Ultra) and the tail when anchored after ^ or '-'.
+
+    De-hyphens to Mod + tail preserving tail casing. If that merged token equals a CamelCase
+    COMPOUND_NORMALIZATIONS key (case-insensitive), substitutes the dict value; otherwise leaves
+    Mod canonical + tail as-is (no automatic lowercasing of the tail).
+    """
+    pat = re.compile(
+        rf"(^|-)({_MODIFIER_REGEX_PART})-([A-Za-z0-9]+)",
+        re.IGNORECASE,
+    )
+    ci = _ci_compound_camel_value_map()
+
+    def repl(m: re.Match[str]) -> str:
+        prefix, mod_raw, tail = m.group(1), m.group(2), m.group(3)
+        mod = _MODIFIER_CANONICAL[mod_raw.lower()]
+        merged_key = (mod + tail).lower()
+        if merged_key in ci:
+            return prefix + ci[merged_key]
+        return prefix + mod + tail
+
+    return pat.sub(repl, stem)
+
+
+def merge_literal_hyphen_compounds(stem: str) -> str:
+    """Apply (^|-)left-right for remaining dict hyphen keys (e.g. Small-Caps → Smallcaps)."""
+    result = stem
+    for left, right, canonical in literal_hyphen_merge_specs():
+        pat = re.compile(
+            r"(^|-)" + re.escape(left) + r"-" + re.escape(right),
+            re.IGNORECASE,
+        )
+        result = pat.sub(lambda m, canon=canonical: m.group(1) + canon, result)
+    return result
 
 
 def remove_counter_suffix(filename: str) -> Tuple[str, bool]:
@@ -205,9 +316,11 @@ def normalize_filename(filename: str) -> Tuple[str, List[str]]:
             result = result[:start] + replace_term + result[end:]
             replaced_terms.append(find_term)
 
-    # Apply global whitespace and hyphen normalization to the stem
+    # Collapse hyphen-doubling first so Semi--Bold can become Semibold in one compound pass.
     result = remove_spaces(result)
     result = normalize_hyphens(result)
+    result = sanitize_modifier_hyphens(result)
+    result = merge_literal_hyphen_compounds(result)
 
     # If nothing changed at all, return the original filename
     if not replaced_terms and result == stem:

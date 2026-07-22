@@ -432,7 +432,9 @@ def is_variable_font(filename: str) -> bool:
     """Check if filename indicates a variable font (case-insensitive)."""
     stem, _ = split_stem_and_suffixes(filename)
     stem_lower = stem.lower()
-    return any(indicator in stem_lower for indicator in ["variable", "var", "vf"])
+    # Word boundaries avoid false matches (e.g. "DenovaRounded" containing "var").
+    patterns = [r"\bvariable\b", r"\bvar\b", r"\bvf\b"]
+    return any(re.search(pattern, stem_lower) for pattern in patterns)
 
 
 def normalize_smallcaps_term(term: str) -> str:

@@ -62,8 +62,8 @@ Ensure consistent hyphenation patterns in filenames.
 ### `FNT_WordDeduplicator.py`
 Remove duplicate words from font filenames.
 
-### `FNT_RegularInserter.py`
-Insert "Regular" into filenames that are missing it (for non-bold, non-italic fonts).
+### `FNT_RegularInserterEnhanced.py`
+Insert "Regular" into filenames missing an explicit weight (canonical Regular inserter). Older width-only `FNT_RegularInserter.py` is under `_misc/_archive/Filename_Tools/` — see `PRODUCT_REFINEMENT_NOTES.md`.
 
 ### `FNT_ReorderWidths.py`
 Reorder width terms in filenames to standard positions.

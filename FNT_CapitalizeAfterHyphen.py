@@ -5,6 +5,12 @@ Underscores and spaces are then removed; hyphens are preserved.
 
 Optional post-passes on the basename stem:
 
+  -t, --title-case
+      Convert fully-uppercase alphabetic words (2+ letters) to Title Case before
+      any other transform, e.g. ALLCAPS -> Allcaps. Mixed-case words are left
+      untouched. Words listed via -F/--find are skipped, so you can protect
+      specific acronyms (e.g. -F RGB -t leaves RGB alone).
+
   -w, --widths
       After FontCore width tokens (Condensed, ExtraWide, ...), uppercase only the
       next character when it is lowercase (e.g. Condensedbold); existing capitals
@@ -19,6 +25,7 @@ Examples:
   my-file.ttf          -> My-File.ttf
   my_file_name.otf     -> MyFileName.otf
   my file-name.ttf     -> MyFile-Name.ttf
+  ALLCAPS-NAME.ttf (-t) -> Allcaps-Name.ttf
 
 By default only the basename (without extension) is transformed. Use
 --include-extension to also transform the extension portion.
@@ -33,6 +40,7 @@ Safety:
 Usage:
   python FNT_CapitalizeAfterHyphen.py PATH [PATH ...]
   python FNT_CapitalizeAfterHyphen.py DIR -r -w -F Cut,Rough
+  python FNT_CapitalizeAfterHyphen.py DIR -t -F RGB
   python FNT_CapitalizeAfterHyphen.py DIR --no-cleanup  # Keep " (n)" suffixes
 """
 
@@ -56,6 +64,47 @@ if str(_project_root) not in sys.path:
 
 import FontCore.core_console_styles as cs
 from FontCore.core_font_style_dictionaries import ALL_WIDTH_TERMS
+
+
+def titlecase_allcaps_words(text: str, exclude: Sequence[str] | None = None) -> str:
+    """Convert fully-uppercase alphabetic runs (2+ letters) to Title Case.
+
+    Examples:
+      "ALLCAPS"        -> "Allcaps"
+      "ALLCAPS-NAME"   -> "Allcaps-Name"
+      "AllCaps"        -> "AllCaps"   (already mixed case, left alone)
+      "RGB" with exclude=["rgb"] -> "RGB" (protected)
+
+    Only alphabetic characters are considered part of a "word"; digits,
+    hyphens, underscores, and spaces act as boundaries and are passed through
+    unchanged. Words that case-insensitively match an entry in `exclude`
+    (e.g. names passed via -F/--find) are left untouched.
+    """
+    if not text:
+        return text
+
+    exclude_lower = {e.strip().lower() for e in (exclude or []) if e.strip()}
+
+    out: list[str] = []
+    i = 0
+    n = len(text)
+    while i < n:
+        ch = text[i]
+        if ch.isalpha():
+            j = i
+            while j < n and text[j].isalpha():
+                j += 1
+            word = text[i:j]
+            if len(word) > 1 and word.isupper() and word.lower() not in exclude_lower:
+                out.append(word[0].upper() + word[1:].lower())
+            else:
+                out.append(word)
+            i = j
+        else:
+            out.append(ch)
+            i += 1
+
+    return "".join(out)
 
 
 def transform_segment_capitalize_after_hyphen(text: str) -> str:
@@ -165,6 +214,7 @@ def build_new_filename(
     *,
     widths: bool = False,
     find_needles: Sequence[str] | None = None,
+    title_case: bool = False,
 ) -> str:
     """Construct a new filename by transforming characters after '-'.
 
@@ -173,7 +223,10 @@ def build_new_filename(
     """
     original_path = Path(original_name)
     if include_extension:
-        transformed = transform_segment_capitalize_after_hyphen(original_path.name)
+        transformed = original_path.name
+        if title_case:
+            transformed = titlecase_allcaps_words(transformed, find_needles)
+        transformed = transform_segment_capitalize_after_hyphen(transformed)
         if widths:
             transformed = capitalize_after_width_terms(transformed, ALL_WIDTH_TERMS)
         if find_needles:
@@ -182,6 +235,8 @@ def build_new_filename(
 
     stem = original_path.stem
     suffix = "".join(original_path.suffixes)
+    if title_case:
+        stem = titlecase_allcaps_words(stem, find_needles)
     new_stem = transform_segment_capitalize_after_hyphen(stem)
     if widths:
         new_stem = capitalize_after_width_terms(new_stem, ALL_WIDTH_TERMS)
@@ -294,6 +349,7 @@ def compute_rename(
     *,
     widths: bool = False,
     find_needles: Sequence[str] | None = None,
+    title_case: bool = False,
 ) -> Tuple[str, str]:
     """Compute old->new name mapping (basename only), without touching disk."""
     old_name = file_path.name
@@ -302,6 +358,7 @@ def compute_rename(
         include_extension,
         widths=widths,
         find_needles=find_needles,
+        title_case=title_case,
     )
     return old_name, new_name
 
@@ -315,12 +372,14 @@ def perform_rename(
     *,
     widths: bool = False,
     find_needles: Sequence[str] | None = None,
+    title_case: bool = False,
 ) -> None:
     old_name, new_name = compute_rename(
         file_path,
         include_extension,
         widths=widths,
         find_needles=find_needles,
+        title_case=title_case,
     )
 
     if new_name == old_name:
@@ -382,6 +441,16 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
         help="Also transform the extension portion",
     )
     parser.add_argument(
+        "-t",
+        "--title-case",
+        action="store_true",
+        help=(
+            "Convert fully-uppercase words (2+ letters) to Title Case before other "
+            "transforms, e.g. ALLCAPS -> Allcaps. Words matched by -F/--find are "
+            "skipped, so you can protect specific acronyms (e.g. -F RGB -t)."
+        ),
+    )
+    parser.add_argument(
         "-w",
         "--widths",
         action="store_true",
@@ -398,7 +467,8 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
         help=(
             'Comma-separated substrings: after each match, uppercase only the following '
             "character when it is lowercase; leave existing capitals untouched. "
-            'Case-insensitive match (e.g. -F Cut,Rough).'
+            'Case-insensitive match (e.g. -F Cut,Rough). Also protects exact-word '
+            "matches from --title-case."
         ),
     )
     parser.add_argument(
@@ -432,17 +502,6 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
         help="Skip the cleanup pass (keeps ' (n)' suffixes)",
     )
 
-    # If no arguments are provided and cleanup is not explicitly disabled,
-    # assume current directory for cleanup operations.
-    if not argv and "--cleanup" not in argv and "--no-cleanup" not in argv:
-        # This branch is tricky because if 'paths' is required, it can't be empty.
-        # The user's original call had no paths, so this might be the intent.
-        # However, the script is designed to *require* paths for its primary function.
-        # This change would essentially make paths optional, which is not what
-        # the 'required positional argument' error usually implies.
-        # Reverting to original behavior to ensure 'paths' is always expected.
-        pass
-
     return parser.parse_args(argv)
 
 
@@ -472,6 +531,7 @@ def main(argv: Iterable[str]) -> int:
                 verbose=args.verbose,
                 widths=args.widths,
                 find_needles=find_needles or None,
+                title_case=args.title_case,
             )
 
     # Cleanup pass to remove " (n)" suffixes

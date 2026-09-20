@@ -8,7 +8,6 @@ https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_Hyphenation
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_Normalizer.py
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_NumberWordConverter.py
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_PatternAnalyzer.py
-https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_RegularInserter.py
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_RegularInserterEnhanced.py
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_ReorderFind-n-Replace.py
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_ReorderOpticalSizes.py
@@ -16,13 +15,16 @@ https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_ReorderSlop
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_ReorderWidths.py
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_StyleNameExpander.py
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FNT_WordDeduplicator.py
+https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FontCore
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/FontFiles_Cleaner.py
+https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/PRODUCT_REFINEMENT_NOTES.md
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/README.md
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/pyproject.toml
 https://raw.githubusercontent.com/andrewsipe/Filename_Tools/main/requirements.txt
 
 # FontCore/
 https://raw.githubusercontent.com/andrewsipe/FontCore/main/CoreDemoTool.py
+https://raw.githubusercontent.com/andrewsipe/FontCore/main/PRODUCT_REFINEMENT_NOTES.md
 https://raw.githubusercontent.com/andrewsipe/FontCore/main/README.md
 https://raw.githubusercontent.com/andrewsipe/FontCore/main/__init__.py
 https://raw.githubusercontent.com/andrewsipe/FontCore/main/core_console_config.py

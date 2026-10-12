@@ -152,3 +152,14 @@ python FontFiles_Cleaner.py /path/to/fonts -R --dry-run
 - [FileRenamer](https://github.com/andrewsipe/FileRenamer) - Rename fonts to PostScript names
 - [FontNameID](https://github.com/andrewsipe/FontNameID) - Update font metadata (NameID tables)
 
+
+## FontCore dependency
+
+This tool imports the shared [`FontCore`](https://github.com/andrewsipe/FontCore) package (`import FontCore…`). It is **not** vendored or a submodule here. On a fresh machine:
+
+```bash
+git clone https://github.com/andrewsipe/FontCore.git ../FontCore
+python3 -m pip install -e ../FontCore
+```
+
+(In the author's monorepo checkout, `./FontCore` is a local symlink to `../FontCore/src/FontCore`; it is git-ignored.)

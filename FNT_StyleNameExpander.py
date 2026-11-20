@@ -768,7 +768,7 @@ def perform_var_name_normalization(
     if not _FONTTOOLS_AVAILABLE:
         return False, "fontTools not available"
     try:
-        font = TTFont(str(file_path))  # type: ignore
+        font = TTFont(str(file_path), recalcTimestamp=False)  # type: ignore
     except Exception as exc:  # noqa: BLE001
         return False, f"open failed: {exc}"
 

@@ -1,165 +1,70 @@
 # Filename Tools
 
-Font filename normalization and cleaning tools for consistent naming conventions.
+**Version 0.2.0**
 
-## Overview
+Clean, normalize and reorder the terms in font **filenames** so a collection follows one naming pattern. Each tool does one job; `filenametools cleaner` bundles the common ones.
 
-This directory contains specialized scripts for cleaning, normalizing, and standardizing font filenames. These tools help ensure consistent naming patterns across font collections.
+Typical pipeline: **filenametools** → name-table fixes ([FontNameID](https://github.com/andrewsipe/FontNameID)) → rename from metadata ([FileRenamer](https://github.com/andrewsipe/FileRenamer)).
 
-## Scripts
+## Install
 
-### `FontFiles_Cleaner.py`
-**Main unified filename cleaner** - Intelligent pattern matching with auto-adaptive processing.
-
-Cleans font filenames using pattern matching for heavy lifting and minimal dictionaries for edge cases. Auto-detects file quality and adapts processing intensity.
-
-**Usage:**
-```bash
-# Preview changes
-python FontFiles_Cleaner.py /path/to/fonts -R --dry-run
-
-# Light cleaning workflow
-python FontFiles_Cleaner.py /path/to/fonts -R --workflow light
-
-# Heavy cleaning workflow
-python FontFiles_Cleaner.py /path/to/fonts -R --workflow heavy
-
-# Preview mode (shows what would change)
-python FontFiles_Cleaner.py /path/to/fonts -R --preview
-```
-
-### `FNT_Normalizer.py`
-Normalize specific terms in font filenames using case-insensitive find-and-replace.
-
-**Usage:**
-```bash
-python FNT_Normalizer.py /path/to/fonts -R
-```
-
-### `FNT_NumberWordConverter.py`
-Convert spelled-out number words (One, Two, Three) to numeric form (1, 2, 3) in filenames.
-
-**Usage:**
-```bash
-python FNT_NumberWordConverter.py /path/to/fonts -R
-```
-
-### `FNT_CompoundWordNormalizer.py`
-Normalize compound words in font filenames (e.g., "SemiBold" → "Semi Bold").
-
-### `FNT_AbbreviationsExpander.py`
-Expand abbreviations in filenames (e.g., "Reg" → "Regular").
-
-### `FNT_StyleNameExpander.py`
-Expand style name abbreviations and normalize style terms.
-
-### `FNT_CapitalizeAfterHyphen.py`
-Capitalize words after hyphens in filenames.
-
-### `FNT_HyphenationConsistency.py`
-Ensure consistent hyphenation patterns in filenames.
-
-### `FNT_WordDeduplicator.py`
-Remove duplicate words from font filenames.
-
-### `FNT_RegularInserterEnhanced.py`
-Insert "Regular" into filenames missing an explicit weight (canonical Regular inserter). Older width-only `FNT_RegularInserter.py` is under `_misc/_archive/Filename_Tools/` — see `PRODUCT_REFINEMENT_NOTES.md`.
-
-### `FNT_ReorderWidths.py`
-Reorder width terms in filenames to standard positions.
-
-### `FNT_ReorderOpticalSizes.py`
-Reorder optical size terms in filenames.
-
-### `FNT_ReorderFind-n-Replace.py`
-Reorder terms in filenames using find-and-replace patterns.
-
-### `FNT_PatternAnalyzer.py`
-Analyze filename patterns in a font collection.
-
-### `FNT_CorpusPatternAnalyzer.py`
-Analyze patterns across a corpus of font filenames.
-
-## Common Options
-
-Most scripts support:
-- `-R, --recursive` - Process directories recursively
-- `--dry-run` - Preview changes without modifying files
-- `-V, --verbose` - Show detailed processing information
-
-## Dependencies
-
-See `requirements.txt`:
-- `word2number` - For number word conversion (FNT_NumberWordConverter.py)
-- Core dependencies (fonttools, rich) provided by included `core/` library
-
-## Installation
-
-### Option 1: Install with pipx (Recommended)
-
-pipx installs the tool in an isolated environment and makes it available system-wide:
+Preferred: [uv](https://docs.astral.sh/uv/):
 
 ```bash
-# Install directly from GitHub
-pipx install git+https://github.com/andrewsipe/Filename_Tools.git
-
-# Or install a specific branch/tag
-pipx install git+https://github.com/andrewsipe/Filename_Tools.git@main
+uv tool install "git+https://github.com/andrewsipe/Filename_Tools.git"
+# later: uv tool upgrade filenametools
 ```
 
-After installation, run scripts directly:
-```bash
-python FontFiles_Cleaner.py /path/to/fonts -R --dry-run
-```
+Or [pipx](https://pipx.pypa.io/): `pipx install "git+https://github.com/andrewsipe/Filename_Tools.git"`.
+From a clone: `uv tool install --editable .` (edits take effect immediately).
 
-**Upgrade:**
-```bash
-pipx upgrade font-filename-tools
-```
+Requires Python 3.10+. FontCore is vendored in `FontCore/` (see `FontCore/VENDOR.md`), so there is nothing else to install.
 
-**Uninstall:**
-```bash
-pipx uninstall font-filename-tools
-```
+## One command
 
-### Option 2: Manual Installation
+`filenametools <target> [options] PATH ...` — each target is one of the original single-purpose scripts, options unchanged. `filenametools <target> -h` lists them.
 
-1. Clone this repository:
-```bash
-git clone https://github.com/andrewsipe/Filename_Tools.git
-cd Filename_Tools
-```
+| Target | Was | What it does |
+|---|---|---|
+| `cleaner` | `FontFiles_Cleaner.py` | Unified cleaner with light/heavy workflows |
+| `normalize` | `FNT_Normalizer.py` | Case-insensitive term normalization |
+| `numbers` | `FNT_NumberWordConverter.py` | Number words to digits (`One` → `1`) |
+| `compound` | `FNT_CompoundWordNormalizer.py` | Compound words (`SemiBold` → `Semi Bold`) |
+| `abbreviations` | `FNT_AbbreviationsExpander.py` | Expand abbreviations (`Reg` → `Regular`) |
+| `styles` | `FNT_StyleNameExpander.py` | Expand style-name abbreviations |
+| `capitalize-after-hyphen` | `FNT_CapitalizeAfterHyphen.py` | Capitalize words after hyphens |
+| `hyphenation` | `FNT_HyphenationConsistency.py` | Consistent hyphenation |
+| `dedupe-words` | `FNT_WordDeduplicator.py` | Remove duplicate words |
+| `regular` | `FNT_RegularInserterEnhanced.py` | Insert a missing `Regular` |
+| `reorder-widths` | `FNT_ReorderWidths.py` | Reorder width terms |
+| `reorder-slopes` | `FNT_ReorderSlopes.py` | Reorder slope terms |
+| `reorder-optical` | `FNT_ReorderOpticalSizes.py` | Reorder optical-size terms |
+| `reorder-replace` | `FNT_ReorderFind-n-Replace.py` | Reorder via find/replace patterns |
+| `patterns` | `FNT_PatternAnalyzer.py` | Sequence/pattern stats for a filename list |
+| `corpus` | `FNT_CorpusPatternAnalyzer.py` | N-gram / corpus report |
 
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-3. Run scripts:
-```bash
-python FontFiles_Cleaner.py /path/to/fonts -R --dry-run
-```
-
-## Workflow Recommendations
-
-1. **Start with analysis**: Use `FNT_PatternAnalyzer.py` to understand your filename patterns
-2. **Clean with FontFiles_Cleaner**: Use the unified cleaner for most cases
-3. **Apply specific normalizers**: Use individual FNT_ scripts for targeted fixes
-4. **Verify with dry-run**: Always use `--dry-run` first to preview changes
-
-## Related Tools
-
-- [FileRenamer](https://github.com/andrewsipe/FileRenamer) - Rename fonts to PostScript names
-- [FontNameID](https://github.com/andrewsipe/FontNameID) - Update font metadata (NameID tables)
-
-
-## FontCore dependency
-
-This tool imports the shared [`FontCore`](https://github.com/andrewsipe/FontCore) package (`import FontCore…`). It is **not** vendored or a submodule here. On a fresh machine:
+## Quick start
 
 ```bash
-git clone https://github.com/andrewsipe/FontCore.git ../FontCore
-python3 -m pip install -e ../FontCore
+filenametools cleaner fonts/ -r -n          # preview the unified cleaner, recursive
+filenametools reorder-widths fonts/ -r -n
+filenametools normalize fonts/ -r
 ```
 
-(In the author's monorepo checkout, `./FontCore` is a local symlink to `../FontCore/src/FontCore`; it is git-ignored.)
+Most targets take `-r/--recursive`, `-n/--dry-run`, `-v/--verbose` and `--no-preview`. Always run a dry run first: these tools rename files on disk.
+
+The scripts still live in the `filenametools/` package (`python -m filenametools.FNT_Normalizer ...`).
+
+## Notes
+
+- `word2number` is required for the `numbers` target.
+- `corpus` raises `ZeroDivisionError` when it finds no comparable files (known, unchanged).
+- A more considered grouping of these single-purpose tools is planned; see `PRODUCT_REFINEMENT_NOTES.md`.
+
+## Development
+
+```bash
+uv venv && uv pip install -e ".[test]" && pytest
+```
+
+Refresh the vendored FontCore from inside a FontCore checkout: `python tools/vendor_fontcore.py sync ../Filename_Tools`.

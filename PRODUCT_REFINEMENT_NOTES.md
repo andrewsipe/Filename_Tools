@@ -64,3 +64,9 @@ Enhanced is **not** a strict behavioral superset. Declutter chose Enhanced as th
 - No metrics-checkpoint junk found in this folder.
 - `raw_github_urls.txt` is PushCore noise (same as other packages).
 - README omits some active scripts (e.g. `FNT_ReorderSlopes.py`); refresh on product pass.
+
+## Packaging pass (2026-11-20)
+
+- Package `filenametools/` with a thin dispatcher (`filenametools <target>`); scripts unchanged inside it. Targets are a mechanical kebab-case of the script names; revisit when the tools are regrouped.
+- Used most: `normalize`, `reorder-widths`, `reorder-slopes`, `capitalize-after-hyphen`. Some scripts were bespoke one-offs.
+- Open: `corpus` divides by zero when no files are comparable; the `FNT_Reorder*` trio and the two RegularInserter versions still overlap.

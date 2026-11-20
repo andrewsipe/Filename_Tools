@@ -11,7 +11,7 @@ import pathlib
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-GLOBS = ['FNT_*.py', 'FontFiles_Cleaner.py']
+GLOBS = ["filenametools/FNT_*.py", "filenametools/FontFiles_Cleaner.py"]
 READ_ONLY = []
 
 

@@ -1,26 +1,38 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "font-filename-tools"
-version = "0.1.0"
-description = "Font filename normalization and cleaning tools for consistent naming conventions"
+name = "filenametools"
+version = "0.2.0"
+description = "Clean, normalize and reorder terms in font filenames"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
+authors = [
+    { name = "Andrew Sipe" }
+]
+license = { text = "MIT" }
 dependencies = [
     "fonttools>=4.40.0",
     "rich>=13.0.0",
-    "word2number>=1.3",
+    "word2number>=1.1",
 ]
 
-# Note: Entry points require wrapper functions for scripts that take argv
-# For now, install from git and run scripts directly with: python script.py
-# Future: Add entry point wrappers for direct command access
+[project.optional-dependencies]
+test = ["pytest>=7.4"]
+
+[project.urls]
+Homepage = "https://github.com/andrewsipe/Filename_Tools"
+Repository = "https://github.com/andrewsipe/Filename_Tools"
+
+[project.scripts]
+filenametools = "filenametools.cli:main"
 
 [tool.setuptools]
-packages = ["."]
+packages = ["filenametools", "FontCore"]
 
-[tool.setuptools.package-data]
-"*" = ["*.py", "core/**/*"]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
+[tool.fontcore-vendor]
+modules = ["core_console_styles", "core_file_collector", "core_font_style_dictionaries"]

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.1] - 2026-11-20
+
+### Fixed
+- `filenametools corpus` no longer raises `ZeroDivisionError` when it finds no terms (for example a folder of
+  single-word filenames); the validation summary shows `n/a` percentages.
+
 ## [0.2.0] - 2026-11-20
 
 First installable release.

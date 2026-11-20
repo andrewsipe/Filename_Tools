@@ -569,15 +569,13 @@ def generate_markdown_report(results):
         unknown_count = len(validation["unknown"])
 
         md.append("**Validation Summary:**")
-        md.append(
-            f"- Exact matches: {exact_count}/{total} ({exact_count / total * 100:.0f}%)"
-        )
-        md.append(
-            f"- Fuzzy matches: {fuzzy_count}/{total} ({fuzzy_count / total * 100:.0f}%)"
-        )
-        md.append(
-            f"- Unknown terms: {unknown_count}/{total} ({unknown_count / total * 100:.0f}%)"
-        )
+        def _pct(count: int) -> str:
+            # No discovered terms (e.g. only single-word filenames): nothing to divide by.
+            return f"{count / total * 100:.0f}%" if total else "n/a"
+
+        md.append(f"- Exact matches: {exact_count}/{total} ({_pct(exact_count)})")
+        md.append(f"- Fuzzy matches: {fuzzy_count}/{total} ({_pct(fuzzy_count)})")
+        md.append(f"- Unknown terms: {unknown_count}/{total} ({_pct(unknown_count)})")
         md.append("")
 
     # Section 5: Sample Splits

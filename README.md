@@ -1,6 +1,6 @@
 # Filename Tools
 
-**Version 0.2.0**
+**Version 0.2.1**
 
 Clean, normalize and reorder the terms in font **filenames** so a collection follows one naming pattern. Each tool does one job; `filenametools cleaner` bundles the common ones.
 
@@ -58,7 +58,6 @@ The scripts still live in the `filenametools/` package (`python -m filenametools
 ## Notes
 
 - `word2number` is required for the `numbers` target.
-- `corpus` raises `ZeroDivisionError` when it finds no comparable files (known, unchanged).
 - A more considered grouping of these single-purpose tools is planned; see `PRODUCT_REFINEMENT_NOTES.md`.
 
 ## Development

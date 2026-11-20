@@ -71,3 +71,13 @@ def test_dry_run_changes_nothing(tmp_path):
     result = _cli("reorder-widths", "-n", str(tmp_path))
     assert result.returncode == 0, result.stderr
     assert [p.name for p in tmp_path.iterdir()] == ["Probe Wide-Light.otf"]
+
+
+def test_corpus_with_no_discoverable_terms_does_not_crash(tmp_path):
+    """Single-word filenames yield no terms; the summary used to divide by zero."""
+    (tmp_path / "Kappa.ttf").write_bytes(b"")
+    (tmp_path / "Lambda.otf").write_bytes(b"")
+    result = _cli("corpus", str(tmp_path))
+    assert result.returncode == 0, result.stderr[-400:]
+    assert "ZeroDivisionError" not in result.stderr
+    assert (tmp_path / "corpus_analysis_report_simple.md").exists()

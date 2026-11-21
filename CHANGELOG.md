@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.2] - 2026-11-21
+
+### Changed
+- Vendored FontCore refreshed to v0.3.1 (5 modules). Console wording and counts change ("1 file" / "3 files", `Finished`).
+  The style dictionaries the commands read are unchanged (new helpers were added; no word list changed), and the 26 tests pass as before.
+
 ## [0.2.1] - 2026-11-20
 
 ### Fixed

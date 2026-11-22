@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [0.4.0] - 2026-11-22
+
+FontCore 0.6.0 vendored (see `FontCore/VENDOR.md`).
+
+**Behavior change:** `compound` writes the house form (Semibold, SemiCondensed, XXCondensed); `reorder` is one command for the four reorder commands (old names still work).
 
 ### Changed
 - Install and update instructions use `uv tool install` / `uv tool upgrade` (pipx is no longer mentioned).

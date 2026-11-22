@@ -81,3 +81,48 @@ def test_corpus_with_no_discoverable_terms_does_not_crash(tmp_path):
     assert result.returncode == 0, result.stderr[-400:]
     assert "ZeroDivisionError" not in result.stderr
     assert (tmp_path / "corpus_analysis_report_simple.md").exists()
+
+
+# ---- grouped help ---------------------------------------------------------------------------------------
+
+def test_every_target_is_in_exactly_one_group():
+    from filenametools.cli import GROUPS
+
+    listed = [t for _, targets in GROUPS for t in targets]
+    assert sorted(listed) == sorted(TARGETS)
+    assert len(listed) == len(set(listed))
+
+
+def test_the_help_shows_the_groups_in_order_with_every_target():
+    from filenametools.cli import GROUPS
+
+    out = _cli("-h").stdout
+    positions = [out.index(title) for title, _ in GROUPS]
+    assert positions == sorted(positions)
+    for target in TARGETS:
+        assert f"  {target} " in out or f"  {target}\n" in out
+
+
+def test_the_look_first_group_comes_before_anything_that_renames():
+    from filenametools.cli import GROUPS
+
+    titles = [t for t, _ in GROUPS]
+    assert titles[0].lower().startswith("look")
+    assert set(GROUPS[0][1]) == {"check", "patterns", "corpus"}
+
+
+def test_the_help_says_which_targets_change_nothing_and_suggests_an_order():
+    out = _cli("-h").stdout
+    assert "change nothing" in out and "Suggested order" in out
+
+
+def test_every_target_still_runs_under_its_old_name():
+    for target in TARGETS:
+        assert _cli(target, "-h").returncode == 0, target
+
+
+@pytest.mark.parametrize("target", ["patterns", "corpus"])
+def test_help_for_the_targets_that_read_their_own_arguments(target):
+    result = _cli(target, "-h")
+    assert result.returncode == 0 and f"usage: filenametools {target}" in result.stdout
+    assert "No such file" not in result.stdout + result.stderr

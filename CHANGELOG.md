@@ -4,6 +4,10 @@
 
 ### Changed
 - Install and update instructions use `uv tool install` / `uv tool upgrade` (pipx is no longer mentioned).
+- `filenametools -h` and the README group the commands by job, in the order a run usually goes (look first, clean up in one go, fix the words, fix hyphens and add Regular, put the terms in order), with a suggested order and a note that everything outside the first group renames files. Command names are unchanged. A few descriptions are in plainer words.
+
+### Fixed
+- `filenametools patterns -h` and `filenametools corpus -h` ran the analysis on a path called `-h`. They now print their usage.
 
 ## [0.3.0] - 2026-11-21
 

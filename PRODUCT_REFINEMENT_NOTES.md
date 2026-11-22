@@ -70,3 +70,9 @@ Enhanced is **not** a strict behavioral superset. Declutter chose Enhanced as th
 - Package `filenametools/` with a thin dispatcher (`filenametools <target>`); scripts unchanged inside it. Targets are a mechanical kebab-case of the script names; revisit when the tools are regrouped.
 - Used most: `normalize`, `reorder-widths`, `reorder-slopes`, `capitalize-after-hyphen`. Some scripts were bespoke one-offs.
 - Fixed 2026-11-20 (0.2.1): `corpus` divided by zero when no terms were discovered. Open: the `FNT_Reorder*` trio and the two RegularInserter versions still overlap.
+
+## Regrouping pass (2026-11-22)
+
+- `filenametools -h` and the README now group the 17 targets by job, in the order a run usually goes: look first (`check`, `patterns`, `corpus`), the one-go `cleaner`, fix the words, fix hyphens and add Regular, put the terms in order. Names are unchanged, so nothing that calls them breaks.
+- `patterns` and `corpus` read their arguments by hand, so `-h` used to run them on a path called `-h`. The dispatcher now answers `-h` for both. `patterns` reads a *text file of filenames*, not fonts; `corpus` reads fonts.
+- Open (the owner's call, not changed here): the three `reorder-*` commands overlap and could become one `reorder` with a term-family choice; `abbreviations` and `styles` both expand abbreviations; `compound` joins and splits in the direction `SemiBold` -> `Semi Bold`, while the house style for names is one word (`Semibold`), and its table has entries that disagree with FontCore's; the docsite is still the starter template.

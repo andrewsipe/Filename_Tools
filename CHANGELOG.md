@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Added
+- `filenametools check`: lists filenames that need a look and changes nothing. Findings: `no-hyphen`, `extra-hyphens`, `spaces`, `weight-in-family`, `cut-short` (suggests the full word from the font's own name records, or marks a dictionary guess as possible), `lowercase-style`, `copy-suffix`, `name-mismatch` (filename style vs the font's name records) and `name-records-odd` (the records hold no style word). On a 1,539-font library sample only 3 fonts are flagged; on a 2,532-font intake copy, 231.
+
 ### Changed
 - One vocabulary: the slope, width, hyphenation and optical-size lists in the reorder, hyphenation and style-expander commands now come from FontCore, so a word added there reaches every command. `reorder-slopes` now treats `Cursive` and `Kursiv` as slopes (`Probe-CursiveBold` -> `Probe-BoldCursive`). Nothing else changes: every other list holds the same words as before.
 - `regular` reads its slope and width words from FontCore too: `Slanted`, `Backslant`, `Backslanted`, `Inclined`, `Kursiv` count as slopes (`Probe-Slanted` -> `Probe-RegularSlanted`) and `Compact`, `Tight` as widths (`Probe-Compact` -> `Probe-CompactRegular`). Its weight list is unchanged: it matches by substring, so the longer FontCore list would catch numbers inside family names.

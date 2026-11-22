@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Normalize compound style words in filenames (stem only) and optionally in
+Normalize compound style words in filenames (stem only) to the house form (Semibold,
+SemiCondensed, XXCondensed, SemiMono, Smallcaps) and optionally in
 variable font name tables.
 
 Focus: Compound normalization only.
@@ -22,6 +23,7 @@ from typing import Dict, Iterable, List, Sequence, Tuple, Optional
 # ruff: noqa: E402
 
 import FontCore.core_console_styles as cs
+from FontCore.core_font_style_dictionaries import join_style_compounds
 
 
 # Optional: fontTools for --var mode
@@ -266,11 +268,30 @@ def iter_target_files(root: Path, recursive: bool) -> Iterable[Path]:
                     yield p
 
 
+_WIDTH_WORDS = "Condensed|Compressed|Compact|Narrow|Tight|Extended|Expanded|Wide"
+_X_RUN_RE = re.compile(rf"(?<![A-Za-z])(X[xX]{{0,6}})(?=(?:{_WIDTH_WORDS}))")
+
+
+def _house_form_style(style: str) -> str:
+    """The style part in the house form: Semi Bold -> Semibold, Semi Condensed -> SemiCondensed, XX Condensed -> XXCondensed."""
+    # an X run keeps its capitals (XX Condensed, never Xx Condensed), before and after joining
+    spaced = re.compile(rf"\b(X[xX]{{0,6}})(?=\s+(?:{_WIDTH_WORDS}))")
+    out = join_style_compounds(spaced.sub(lambda m: m.group(1).upper(), style))
+    return _X_RUN_RE.sub(lambda m: m.group(1).upper(), out)
+
+
 def build_new_filename(original_name: str) -> Tuple[str, List[Tuple[str, str]]]:
     stem, suffixes = split_stem_and_suffixes(original_name)
     new_stem, changes = apply_compound_normalizations_with_pattern(
         stem, COMPOUND_NORMALIZATIONS
     )
+    # then the house form, on the style part only (the family name is left alone)
+    family, hyphen, style = new_stem.partition("-")
+    if hyphen and style:
+        housed = _house_form_style(style)
+        if housed != style:
+            changes.append((style, housed))
+            new_stem = f"{family}-{housed}"
     return f"{new_stem}{suffixes}", changes
 
 
@@ -464,25 +485,25 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         "-r",
         "--recursive",
         action="store_true",
-        help="Recurse into directories (files only)",
+        help="include subfolders",
     )
     parser.add_argument(
         "-n",
         "--dry-run",
         action="store_true",
-        help="Show what would change without renaming",
+        help="preview only; change nothing",
     )
     parser.add_argument(
         "--conflict",
         choices=("skip", "unique", "overwrite"),
         default="unique",
-        help="On name conflict: skip, unique, or overwrite (default: unique)",
+        help="when the new name is already taken: skip the file, add a number (unique), or overwrite (default: unique)",
     )
     parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
-        help="Show unchanged files and additional info",
+        help="also list files that did not change, with more detail",
     )
     parser.add_argument(
         "--var",
@@ -494,13 +515,13 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         "--cleanup",
         action="store_true",
         default=True,
-        help="Remove ' (n)' suffixes when the clean name is available (default: enabled)",
+        help="remove copy numbers like ' (2)' when the clean name is free (default: on)",
     )
     parser.add_argument(
         "--no-cleanup",
         action="store_false",
         dest="cleanup",
-        help="Skip the cleanup pass (keeps ' (n)' suffixes)",
+        help="don't remove copy numbers like ' (2)'",
     )
     parser.add_argument(
         "--rules-file",

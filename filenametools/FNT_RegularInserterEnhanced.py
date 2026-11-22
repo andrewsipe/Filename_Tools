@@ -341,10 +341,10 @@ def perform_rename(
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Insert 'Regular' into font filenames missing weight designation (minimalist approach).",
+        description="Insert 'Regular' into font filenames missing weight designation (it skips names where a word might already be the weight).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-MINIMALIST APPROACH:
+How it decides:
   This script uses core term matching with automatic modifier support:
   - Core weights: Thin, Light, Bold, Black, etc.
   - Modifiers automatically handled: Semi/Demi/Extra/Ultra + core weight
@@ -364,9 +364,9 @@ Examples that will be SKIPPED (require manual review):
   Font-Poster.otf → unchanged (ambiguous term)
 
 Recommended workflow:
-  1. python script.py /fonts --dry-run --show-reason > review.txt
+  1. filenametools regular fonts/ -r -n --show-reason > review.txt
   2. Review the output for false positives
-  3. python script.py /fonts  (if satisfied)
+  3. filenametools regular fonts/ -r  (if satisfied)
   4. Manually handle any skipped ambiguous cases
         """,
     )
@@ -374,24 +374,24 @@ Recommended workflow:
         "paths", nargs="+", help="File(s) and/or director(y/ies) to process"
     )
     parser.add_argument(
-        "-r", "--recursive", action="store_true", help="Recurse into directories"
+        "-r", "--recursive", action="store_true", help="include subfolders"
     )
     parser.add_argument(
-        "-n", "--dry-run", action="store_true", help="Show changes without renaming"
+        "-n", "--dry-run", action="store_true", help="preview only; change nothing"
     )
     parser.add_argument(
         "--conflict",
         choices=("skip", "unique", "overwrite"),
         default="unique",
-        help="Action on name conflict (default: unique)",
+        help="when the new name is already taken: skip the file, add a number (unique), or overwrite (default: unique)",
     )
     parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Show unchanged files"
+        "-v", "--verbose", action="store_true", help="also list files that did not change"
     )
     parser.add_argument(
         "--show-reason",
         action="store_true",
-        help="Show reason for each decision (useful for auditing)",
+        help="show why each file was or was not changed",
     )
     parser.add_argument(
         "--add-weight",

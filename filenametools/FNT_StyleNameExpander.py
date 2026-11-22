@@ -880,25 +880,25 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         "-r",
         "--recursive",
         action="store_true",
-        help="Recurse into directories (files only)",
+        help="include subfolders",
     )
     parser.add_argument(
         "-n",
         "--dry-run",
         action="store_true",
-        help="Show what would change without renaming",
+        help="preview only; change nothing",
     )
     parser.add_argument(
         "--conflict",
         choices=("skip", "unique", "overwrite"),
         default="unique",
-        help="On name conflict: skip, create a unique name, or overwrite (default: unique)",
+        help="when the new name is already taken: skip the file, add a number (unique), or overwrite (default: unique)",
     )
     parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
-        help="Show unchanged files and additional info",
+        help="also list files that did not change, with more detail",
     )
     parser.add_argument(
         "-i",
@@ -916,13 +916,13 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         "--cleanup",
         action="store_true",
         default=True,
-        help="Remove ' (n)' suffixes when the clean name is available (default: enabled)",
+        help="remove copy numbers like ' (2)' when the clean name is free (default: on)",
     )
     parser.add_argument(
         "--no-cleanup",
         action="store_false",
         dest="cleanup",
-        help="Skip the cleanup pass (keeps ' (n)' suffixes)",
+        help="don't remove copy numbers like ' (2)'",
     )
     # Future extension points (explicitly allowed by user): rules additions
     parser.add_argument(

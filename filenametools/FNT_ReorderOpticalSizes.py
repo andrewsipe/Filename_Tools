@@ -247,19 +247,19 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         "paths", nargs="+", help="File(s) and/or director(y/ies) to process"
     )
     parser.add_argument(
-        "-r", "--recursive", action="store_true", help="Recurse into directories"
+        "-r", "--recursive", action="store_true", help="include subfolders"
     )
     parser.add_argument(
-        "-n", "--dry-run", action="store_true", help="Show changes without renaming"
+        "-n", "--dry-run", action="store_true", help="preview only; change nothing"
     )
     parser.add_argument(
         "--conflict",
         choices=("skip", "unique", "overwrite"),
         default="unique",
-        help="On name conflict action (default: unique)",
+        help="when the new name is already taken: skip the file, add a number (unique), or overwrite (default: unique)",
     )
     parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Show unchanged files"
+        "-v", "--verbose", action="store_true", help="also list files that did not change"
     )
     parser.add_argument(
         "-F",

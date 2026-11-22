@@ -1375,7 +1375,7 @@ def handle_rename(
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Intelligent font filename cleaner with auto-detection",
+        description="Clean up font filenames in one pass. The workflow, light to heavy, is chosen for you unless you set it",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -1398,19 +1398,19 @@ Examples:
 
     # General options
     parser.add_argument(
-        "-r", "--recursive", action="store_true", help="Recurse into directories"
+        "-r", "--recursive", action="store_true", help="include subfolders"
     )
     parser.add_argument(
         "-n",
         "--dry-run",
         action="store_true",
-        help="Show what would change without renaming",
+        help="preview only; change nothing",
     )
     parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
-        help="Show unchanged files and additional info",
+        help="also list files that did not change, with more detail",
     )
     parser.add_argument(
         "--workflow",
@@ -1424,29 +1424,29 @@ Examples:
             "light",
         ],
         default="auto",
-        help="Processing intensity (default: auto)",
+        help="how much to change, from safe and light to heavy (default: auto)",
     )
     parser.add_argument(
-        "--preview", action="store_true", help="Show preview of changes before applying"
+        "--preview", action="store_true", help="show a preview before applying"
     )
     parser.add_argument(
         "--conflict",
         choices=["skip", "unique", "overwrite"],
         default="unique",
-        help="On name conflict: skip, unique (n), or overwrite (default: unique)",
+        help="when the new name is already taken: skip the file, add a number (unique), or overwrite (default: unique)",
     )
 
     # Operation toggles
     parser.add_argument(
-        "--no-expand-abbrev", action="store_true", dest="no_expand_abbreviations"
+        "--no-expand-abbrev", action="store_true", dest="no_expand_abbreviations", help="don't expand abbreviations"
     )
-    parser.add_argument("--no-capitalize", action="store_true")
-    parser.add_argument("--no-normalize-compounds", action="store_true")
-    parser.add_argument("--no-fix-hyphens", action="store_true")
-    parser.add_argument("--no-reorder-widths", action="store_true")
-    parser.add_argument("--no-reorder-optical", action="store_true")
-    parser.add_argument("--no-insert-regular", action="store_true")
-    parser.add_argument("--no-deduplicate", action="store_true")
+    parser.add_argument("--no-capitalize", action="store_true", help="don't capitalize the words")
+    parser.add_argument("--no-normalize-compounds", action="store_true", help="don't fix compound words")
+    parser.add_argument("--no-fix-hyphens", action="store_true", help="don't change hyphens")
+    parser.add_argument("--no-reorder-widths", action="store_true", help="don't move width terms")
+    parser.add_argument("--no-reorder-optical", action="store_true", help="don't move optical-size terms")
+    parser.add_argument("--no-insert-regular", action="store_true", help="don't add a missing Regular")
+    parser.add_argument("--no-deduplicate", action="store_true", help="don't remove repeated words")
 
     args = parser.parse_args()
 

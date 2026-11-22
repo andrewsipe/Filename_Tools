@@ -477,24 +477,24 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         help="word to find and move to just after the hyphen (repeatable, or comma-separated; whole words only)",
     )
     parser.add_argument(
-        "-r", "--recursive", action="store_true", help="Recurse into directories"
+        "-r", "--recursive", action="store_true", help="include subfolders"
     )
     parser.add_argument(
-        "-n", "--dry-run", action="store_true", help="Show changes without renaming"
+        "-n", "--dry-run", action="store_true", help="preview only; change nothing"
     )
     parser.add_argument(
         "--conflict",
         choices=("skip", "unique", "overwrite"),
         default="unique",
-        help="On name conflict action (default: unique)",
+        help="when the new name is already taken: skip the file, add a number (unique), or overwrite (default: unique)",
     )
     parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Show unchanged and skipped files"
+        "-v", "--verbose", action="store_true", help="also list files that did not change or were skipped"
     )
     parser.add_argument(
         "--no-preview",
         action="store_true",
-        help="Skip preflight preview and proceed directly",
+        help="skip the preview and start right away",
     )
     return parser.parse_args(argv)
 

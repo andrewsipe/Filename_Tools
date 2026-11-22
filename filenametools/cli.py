@@ -19,7 +19,7 @@ TARGETS: Dict[str, Tuple[str, str]] = {
     "cleaner": ("FontFiles_Cleaner", "the usual clean-up in one pass (light to heavy workflows)"),
     "normalize": ("FNT_Normalizer", "make a term's spelling and case consistent"),
     "numbers": ("FNT_NumberWordConverter", "number words to digits (One -> 1)"),
-    "compound": ("FNT_CompoundWordNormalizer", "compound words (SemiBold -> Semi Bold)"),
+    "compound": ("FNT_CompoundWordNormalizer", "put compound words in the house form (Semi Bold -> Semibold)"),
     "abbreviations": ("FNT_AbbreviationsExpander", "expand abbreviations (Reg -> Regular)"),
     "styles": ("FNT_StyleNameExpander", "expand style-name abbreviations"),
     "capitalize-after-hyphen": ("FNT_CapitalizeAfterHyphen", "capitalize words after hyphens"),

@@ -42,7 +42,7 @@ Requires Python 3.10+. FontCore is vendored in `FontCore/` (see `FontCore/VENDOR
 | Target | Was | What it does |
 |---|---|---|
 | `normalize` | `FNT_Normalizer.py` | Make a term's spelling and case consistent |
-| `compound` | `FNT_CompoundWordNormalizer.py` | Fix compound words (`SemiBold` → `Semi Bold`) |
+| `compound` | `FNT_CompoundWordNormalizer.py` | Put compound words in the house form (`Semi Bold` → `Semibold`, `Semi Condensed` → `SemiCondensed`, `XX Condensed` → `XXCondensed`) |
 | `abbreviations` | `FNT_AbbreviationsExpander.py` | Expand abbreviations (`Reg` → `Regular`) |
 | `styles` | `FNT_StyleNameExpander.py` | Expand style-name abbreviations |
 | `numbers` | `FNT_NumberWordConverter.py` | Number words to digits (`One` → `1`) |

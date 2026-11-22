@@ -111,7 +111,8 @@ def extract_terms(text: str, terms: Set[str]) -> Tuple[str, List[str]]:
     if last_pos < len(text):
         remaining_parts.append(text[last_pos:])
 
-    remaining_text = "".join(remaining_parts)
+    # Close the gap each moved word leaves: one space between the words that stay, none at the ends
+    remaining_text = " ".join("".join(remaining_parts).split())
 
     return remaining_text, terms_found
 

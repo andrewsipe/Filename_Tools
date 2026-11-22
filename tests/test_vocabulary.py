@@ -125,10 +125,16 @@ def test_reorder_replace_needs_a_word_to_find(tmp_path):
 def test_reorder_replace_find_moves_the_whole_word_to_just_after_the_hyphen(tmp_path):
     result, names = _run(tmp_path, "reorder-replace", ["Probe Foo-Bold"], "-F", "Foo", "--no-preview")
     assert result.returncode == 0, result.stdout + result.stderr
-    assert names == ["Probe -FooBold"]  # the command only places found words after the hyphen
+    assert names == ["Probe-FooBold"]  # the command only places found words after the hyphen
 
 
 def test_reorder_replace_find_takes_several_words(tmp_path):
     result, names = _run(tmp_path, "reorder-replace", ["Probe Foo Bar-Bold"], "--find", "Foo,Bar", "--no-preview")
     assert result.returncode == 0, result.stdout + result.stderr
-    assert names == ["Probe  -BarFooBold"]
+    assert names == ["Probe-BarFooBold"]
+
+
+def test_reorder_replace_closes_the_gap_a_moved_word_leaves(tmp_path):
+    result, names = _run(tmp_path, "reorder-replace", ["Probe Foo Display-Bold"], "-F", "Foo", "--no-preview")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert names == ["Probe Display-FooBold"]  # one space between the words that stay, none left at the hyphen

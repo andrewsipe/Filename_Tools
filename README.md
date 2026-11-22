@@ -15,7 +15,6 @@ uv tool install "git+https://github.com/andrewsipe/Filename_Tools.git"
 # later: uv tool upgrade filenametools
 ```
 
-Or [pipx](https://pipx.pypa.io/): `pipx install "git+https://github.com/andrewsipe/Filename_Tools.git"`.
 From a clone: `uv tool install --editable .` (edits take effect immediately).
 
 Requires Python 3.10+. FontCore is vendored in `FontCore/` (see `FontCore/VENDOR.md`), so there is nothing else to install.

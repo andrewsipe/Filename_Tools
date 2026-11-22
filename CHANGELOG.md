@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- Install and update instructions use `uv tool install` / `uv tool upgrade` (pipx is no longer mentioned).
+
 ## [0.3.0] - 2026-11-21
 
 FontCore 0.4.0 vendored (see `FontCore/VENDOR.md`).

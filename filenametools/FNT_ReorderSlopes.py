@@ -22,6 +22,7 @@ from typing import Iterable, List, Sequence, Set, Tuple
 # ruff: noqa: E402
 
 import FontCore.core_console_styles as cs
+import FontCore.core_font_style_dictionaries as _core
 import FontCore.core_file_collector as collector
 import re
 
@@ -29,26 +30,12 @@ import re
 # --- Slope Terms Dictionary ---------------------------------------------------------------------
 
 # Base slope terms
-BASE_SLOPE_TERMS: Set[str] = {
-    "Italic",
-    "Oblique",
-    "Slanted",
-    "Slant",
-    "Inclined",
-    "Backslanted",
-    "Backslant",
-    "Reverse",
-    "Retalic",
-}
+# Base slope terms: one list, in FontCore (core_font_style_dictionaries.SLOPE_BASES)
+BASE_SLOPE_TERMS: Set[str] = set(_core.SLOPE_BASES)
 
 # Modifiers that combine with base terms
-SLOPE_MODIFIERS: Set[str] = {
-    "Semi",
-    "Demi",
-    "Extra",
-    "Ultra",
-    "Super",
-}
+# Modifiers that combine with base terms (FontCore MODIFIERS)
+SLOPE_MODIFIERS: Set[str] = set(_core.MODIFIERS)
 
 # Default move-ahead terms (automatically applied)
 # Order matters: Alt comes first, then Smallcaps variants

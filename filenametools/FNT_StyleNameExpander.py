@@ -45,6 +45,7 @@ except Exception:  # pragma: no cover - env dependent
     _FONTTOOLS_AVAILABLE = False
 
 import FontCore.core_console_styles as cs
+import FontCore.core_font_style_dictionaries as _core
 
 
 # --- Rules (only what the user specified) -------------------------------------------------------
@@ -168,67 +169,13 @@ NON_TRUNCATED_RULES: Dict[str, str] = {}
 TRUNCATED_RULES: Dict[str, str] = {}
 
 # Hyphen placement preferences (seed with examples requested by user)
-HYPHEN_LEFT_TERMS: set[str] = {
-    # Widths (hyphen left Ex -Condensed)
-    "Condensed",
-    "SemiCondensed",
-    "ExtraCondensed",
-    "UltraCondensed",
-    "Compressed",
-    "SemiCompressed",
-    "ExtraCompressed",
-    "UltraCompressed",
-    "Compact",
-    "SemiCompact",
-    "ExtraCompact",
-    "UltraCompact",
-    "Narrow",
-    "SemiNarrow",
-    "ExtraNarrow",
-    "UltraNarrow",
-    "Expanded",
-    "SemiExpanded",
-    "ExtraExpanded",
-    "UltraExpanded",
-    "Extended",
-    "SemiExtended",
-    "ExtraExtended",
-    "UltraExtended",
-    "Wide",
-    "SemiWide",
-    "ExtraWide",
-    "UltraWide",
-    "Variable",
-}
-HYPHEN_RIGHT_TERMS: set[str] = {
-    # Non-WWS (hyphen right Ex Display-)
-    "Display",
-    "Text",
-    "Caption",
-    "Subhead",
-    "Headline",
-    "Title",
-    "Poster",
-    "Deck",
-    "Micro",
-    "Round",
-    "Mono",
-    "Sans",
-    "Slab",
-    "Serif",
-}
+HYPHEN_LEFT_TERMS: set[str] = set(_core.HYPHEN_LEFT_TERMS)  # one list, in FontCore
+HYPHEN_RIGHT_TERMS: set[str] = set(_core.HYPHEN_RIGHT_TERMS)
 
 
 # Known style prefixes that should not keep a hyphen before the next style token.
 # Example fixes: "Semi-Condensed" -> "SemiCondensed", "Extra-Light" -> "ExtraLight".
-COMPOUND_PREFIXES: set[str] = {
-    "Semi",
-    "Extra",
-    "Demi",
-    "X",
-    "Ultra",
-    "Super",
-}
+COMPOUND_PREFIXES: set[str] = set(_core.COMPOUND_PREFIXES)
 
 
 def recompute_rule_partitions() -> None:

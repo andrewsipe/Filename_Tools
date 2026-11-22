@@ -22,30 +22,15 @@ from typing import Iterable, List, Sequence, Set, Tuple
 # ruff: noqa: E402
 
 import FontCore.core_console_styles as cs
+import FontCore.core_font_style_dictionaries as _core
 
 
 # --- Optical Size Terms Dictionary -------------------------------------------------------------
 
-# Common optical size terms
-OPTICAL_SIZE_TERMS: Set[str] = {
-    "Banner",
-    "Big",
-    "Caption",
-    "Display",
-    "Deck",
-    "Fine",
-    "Headline",
-    "Head",
-    "Large",
-    "Micro",
-    "Poster",
-    "Subhead",
-    "Small",
-    "Titling",
-    "Title",
-    "Tall",
-    "Text",
-}
+# Optical size terms: FontCore's list, plus the words only this tool treats as optical sizes
+# (filename-only; they are not in FontCore's list because a family name can end in Small or Fine).
+_FILENAME_ONLY_OPTICAL = {"Big", "Fine", "Head", "Large", "Small", "Tall", "Titling"}
+OPTICAL_SIZE_TERMS: Set[str] = set(_core.OPTICAL_BASES) | _FILENAME_ONLY_OPTICAL
 
 
 # --- Helpers ------------------------------------------------------------------------------------

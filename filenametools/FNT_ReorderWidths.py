@@ -22,6 +22,7 @@ from typing import Iterable, List, Sequence, Set, Tuple
 # ruff: noqa: E402
 
 import FontCore.core_console_styles as cs
+import FontCore.core_font_style_dictionaries as _core
 import FontCore.core_file_collector as collector
 import re
 
@@ -29,25 +30,10 @@ import re
 # --- Width Terms Dictionary ---------------------------------------------------------------------
 
 # Base width terms (the core 8)
-BASE_WIDTH_TERMS: Set[str] = {
-    "Compressed",
-    "Compact",
-    "Condensed",
-    "Narrow",
-    "Tight",
-    "Wide",
-    "Extended",
-    "Expanded",
-}
+BASE_WIDTH_TERMS: Set[str] = set(_core.WIDTH_BASES)  # one list, in FontCore
 
 # Modifiers that combine with base terms
-WIDTH_MODIFIERS: Set[str] = {
-    "Semi",
-    "Demi",
-    "Extra",
-    "Ultra",
-    "Super",
-}
+WIDTH_MODIFIERS: Set[str] = set(_core.MODIFIERS)
 
 
 # --- TermExtractor Class ---------------------------------------------------------------------

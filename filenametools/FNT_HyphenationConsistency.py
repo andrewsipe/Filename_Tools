@@ -26,58 +26,14 @@ from typing import Iterable, List, Sequence, Tuple
 # ruff: noqa: E402
 
 import FontCore.core_console_styles as cs
+import FontCore.core_font_style_dictionaries as _core
 
 
-HYPHEN_LEFT_TERMS: set[str] = {
-    "Condensed",
-    "SemiCondensed",
-    "ExtraCondensed",
-    "UltraCondensed",
-    "Compressed",
-    "SemiCompressed",
-    "ExtraCompressed",
-    "UltraCompressed",
-    "Compact",
-    "SemiCompact",
-    "ExtraCompact",
-    "UltraCompact",
-    "Narrow",
-    "SemiNarrow",
-    "ExtraNarrow",
-    "UltraNarrow",
-    "Expanded",
-    "SemiExpanded",
-    "ExtraExpanded",
-    "UltraExpanded",
-    "Extended",
-    "SemiExtended",
-    "ExtraExtended",
-    "UltraExtended",
-    "Wide",
-    "SemiWide",
-    "ExtraWide",
-    "UltraWide",
-    "Variable",
-}
+HYPHEN_LEFT_TERMS: set[str] = set(_core.HYPHEN_LEFT_TERMS)  # one list, in FontCore
 
-HYPHEN_RIGHT_TERMS: set[str] = {
-    "Display",
-    "Text",
-    "Caption",
-    "Subhead",
-    "Headline",
-    "Title",
-    "Poster",
-    "Deck",
-    "Micro",
-    "Round",
-    "Mono",
-    "Sans",
-    "Slab",
-    "Serif",
-}
+HYPHEN_RIGHT_TERMS: set[str] = set(_core.HYPHEN_RIGHT_TERMS)
 
-COMPOUND_PREFIXES: set[str] = {"Semi", "Extra", "Demi", "X", "Ultra", "Super"}
+COMPOUND_PREFIXES: set[str] = set(_core.COMPOUND_PREFIXES)
 
 
 def split_stem_and_suffixes(filename: str) -> Tuple[str, str]:

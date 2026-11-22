@@ -1,6 +1,6 @@
 # Filename Tools
 
-**Version 0.2.2**
+**Version 0.3.0**
 
 Clean, normalize and reorder the terms in font **filenames** so a collection follows one naming pattern. Each tool does one job; `filenametools cleaner` bundles the common ones.
 

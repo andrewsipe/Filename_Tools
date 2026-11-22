@@ -29,6 +29,7 @@ from typing import Iterable, Sequence, Set, Tuple
 # ruff: noqa: E402
 
 import FontCore.core_console_styles as cs
+import FontCore.core_font_style_dictionaries as _core
 
 
 # --- Minimal Term Dictionaries ------------------------------------------------------------------
@@ -53,25 +54,11 @@ CORE_WEIGHT_TERMS: Set[str] = {
 # We don't need to list SemiBold, ExtraBold, etc.
 # If "Bold" is in the name, that's enough to skip
 
-# Only the most common slope terms
-SLOPE_TERMS: Set[str] = {
-    "Italic",
-    "Oblique",
-    "Slant",
-    "Cursive",
-    "Smallcap",
-}
+# Slope terms: FontCore's list, plus Smallcap (this command treats a small-caps cut like a slope: it sits after the weight)
+SLOPE_TERMS: Set[str] = set(_core.SLOPE_BASES) | {"Smallcap"}
 
-# Only the most common width terms (core terms, modifiers handled automatically)
-WIDTH_TERMS: Set[str] = {
-    "Condensed",
-    "Compressed",
-    "Narrow",
-    "Extended",
-    "Expanded",
-    "Expand",
-    "Wide",
-}
+# Width terms: FontCore's list, plus Expand (modifiers like Semi/Extra are handled automatically)
+WIDTH_TERMS: Set[str] = set(_core.WIDTH_BASES) | {"Expand"}
 
 
 # --- Helpers ------------------------------------------------------------------------------------

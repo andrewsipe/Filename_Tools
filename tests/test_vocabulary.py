@@ -56,3 +56,34 @@ def test_reorder_slopes_moves_cursive_and_kursiv_like_any_slope(tmp_path, stem, 
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert [p.name for p in tmp_path.iterdir()] == [f"{expected}.ttf"]
+
+
+def _regular(tmp_path, stem):
+    (tmp_path / f"{stem}.otf").touch()
+    result = subprocess.run(
+        [sys.executable, "-m", "filenametools", "regular", str(tmp_path)],
+        capture_output=True, text=True, cwd=ROOT, timeout=120, stdin=subprocess.DEVNULL,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    return [p.stem for p in tmp_path.iterdir()][0]
+
+
+@pytest.mark.parametrize(
+    "stem, expected",
+    [
+        ("Probe-Italic", "Probe-RegularItalic"),
+        ("Probe-Oblique", "Probe-RegularOblique"),
+        ("Probe-Cursive", "Probe-RegularCursive"),
+        ("Probe-Slanted", "Probe-RegularSlanted"),
+        ("Probe-Backslant", "Probe-RegularBackslant"),
+        ("Probe-Kursiv", "Probe-RegularKursiv"),
+        ("Probe-Condensed", "Probe-CondensedRegular"),
+        ("Probe-Compact", "Probe-CompactRegular"),
+        ("Probe-Display", "Probe-Display"),  # ambiguous: left for review
+        ("Probe-Carved", "Probe-Carved"),
+        ("Probe-Bold", "Probe-Bold"),
+        ("Probe-Roman", "Probe-Roman"),
+    ],
+)
+def test_regular_uses_the_shared_slope_and_width_words(tmp_path, stem, expected):
+    assert _regular(tmp_path, stem) == expected

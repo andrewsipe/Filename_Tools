@@ -4,6 +4,7 @@
 
 ### Changed
 - One vocabulary: the slope, width, hyphenation and optical-size lists in the reorder, hyphenation and style-expander commands now come from FontCore, so a word added there reaches every command. `reorder-slopes` now treats `Cursive` and `Kursiv` as slopes (`Probe-CursiveBold` -> `Probe-BoldCursive`). Nothing else changes: every other list holds the same words as before.
+- `regular` reads its slope and width words from FontCore too: `Slanted`, `Backslant`, `Backslanted`, `Inclined`, `Kursiv` count as slopes (`Probe-Slanted` -> `Probe-RegularSlanted`) and `Compact`, `Tight` as widths (`Probe-Compact` -> `Probe-CompactRegular`). Its weight list is unchanged: it matches by substring, so the longer FontCore list would catch numbers inside family names.
 - `reorder-optical` keeps its filename-only extras (Big, Fine, Head, Large, Small, Tall, Titling) on top of FontCore's list.
 
 ## [0.2.2] - 2026-11-21

@@ -87,3 +87,48 @@ def _regular(tmp_path, stem):
 )
 def test_regular_uses_the_shared_slope_and_width_words(tmp_path, stem, expected):
     assert _regular(tmp_path, stem) == expected
+
+
+def _run(tmp_path, command, stems, *args):
+    for stem in stems:
+        (tmp_path / f"{stem}.otf").touch()
+    result = subprocess.run(
+        [sys.executable, "-m", "filenametools", command, *args, str(tmp_path)],
+        capture_output=True, text=True, cwd=ROOT, timeout=120, stdin=subprocess.DEVNULL,
+    )
+    return result, sorted(p.stem for p in tmp_path.iterdir())
+
+
+def test_reorder_optical_without_find_uses_the_built_in_list(tmp_path):
+    result, names = _run(tmp_path, "reorder-optical", ["Probe-DisplayBold", "Probe-TitlingBold"])
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert names == ["ProbeDisplay-Bold", "ProbeTitling-Bold"]
+
+
+def test_reorder_optical_find_looks_only_for_the_named_words(tmp_path):
+    result, names = _run(tmp_path, "reorder-optical", ["Probe-DisplayBold", "Probe-TitlingBold", "Probe-CarvedBold"], "-F", "Titling", "-F", "Carved")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert names == ["Probe-DisplayBold", "ProbeCarved-Bold", "ProbeTitling-Bold"]  # Display is not in the list now
+
+
+def test_reorder_optical_find_accepts_a_comma_list(tmp_path):
+    result, names = _run(tmp_path, "reorder-optical", ["Probe-DisplayBold", "Probe-CarvedBold"], "--find", "Display,Carved")
+    assert names == ["ProbeCarved-Bold", "ProbeDisplay-Bold"]
+
+
+def test_reorder_replace_needs_a_word_to_find(tmp_path):
+    result, names = _run(tmp_path, "reorder-replace", ["Probe Foo-Bold"])
+    assert result.returncode != 0 and names == ["Probe Foo-Bold"]
+    assert "-F WORD" in result.stdout + result.stderr
+
+
+def test_reorder_replace_find_moves_the_whole_word_to_just_after_the_hyphen(tmp_path):
+    result, names = _run(tmp_path, "reorder-replace", ["Probe Foo-Bold"], "-F", "Foo", "--no-preview")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert names == ["Probe -FooBold"]  # the command only places found words after the hyphen
+
+
+def test_reorder_replace_find_takes_several_words(tmp_path):
+    result, names = _run(tmp_path, "reorder-replace", ["Probe Foo Bar-Bold"], "--find", "Foo,Bar", "--no-preview")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert names == ["Probe  -BarFooBold"]

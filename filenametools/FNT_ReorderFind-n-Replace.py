@@ -468,6 +468,14 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         help="Term to move after hyphen (can be specified multiple times, case-sensitive)",
     )
     parser.add_argument(
+        "-F",
+        "--find",
+        action="append",
+        default=[],
+        metavar="WORD",
+        help="word to find and move to just after the hyphen (repeatable, or comma-separated; whole words only)",
+    )
+    parser.add_argument(
         "-r", "--recursive", action="store_true", help="Recurse into directories"
     )
     parser.add_argument(
@@ -497,10 +505,12 @@ def main(argv: Sequence[str]) -> int:
     # Build term sets from arguments
     prehyphen_terms = set(args.prehyphen or [])
     posthyphen_terms = set(args.posthyphen or [])
+    found = [w.strip() for item in (args.find or []) for w in item.split(",") if w.strip()]
+    posthyphen_terms.update(found)
 
     if not prehyphen_terms and not posthyphen_terms:
         cs.StatusIndicator("error").with_explanation(
-            "At least one --prehyphen or --posthyphen term must be specified"
+            "Give at least one word to find: -F WORD (or --prehyphen / --posthyphen)"
         ).emit()
         return 1
 

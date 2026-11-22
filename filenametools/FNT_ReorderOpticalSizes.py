@@ -262,6 +262,17 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         "-v", "--verbose", action="store_true", help="Show unchanged files"
     )
     parser.add_argument(
+        "-F",
+        "--find",
+        action="append",
+        default=[],
+        metavar="WORD",
+        help=(
+            "look only for this word (repeatable, or comma-separated) instead of the built-in optical sizes; "
+            "--add-optical still adds to whatever is being looked for"
+        ),
+    )
+    parser.add_argument(
         "--add-optical",
         action="append",
         default=[],
@@ -272,7 +283,11 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
 
 
 def load_user_optical_terms(args: argparse.Namespace) -> None:
-    """Add user-defined optical size terms to the classification set."""
+    """With -F/--find, replace the built-in optical sizes with the named words; then add --add-optical terms."""
+    found = [w.strip() for item in (getattr(args, "find", None) or []) for w in item.split(",") if w.strip()]
+    if found:
+        OPTICAL_SIZE_TERMS.clear()
+        OPTICAL_SIZE_TERMS.update(found)
     for term in args.add_optical or []:
         if term.strip():
             OPTICAL_SIZE_TERMS.add(term.strip())

@@ -44,8 +44,12 @@ GROUPS: List[Tuple[str, List[str]]] = [
         ["normalize", "compound", "abbreviations", "styles", "numbers", "dedupe-words", "capitalize-after-hyphen"],
     ),
     ("Fix hyphens and add Regular", ["hyphenation", "regular"]),
-    ("Put the terms in order", ["reorder-widths", "reorder-slopes", "reorder-optical", "reorder-replace"]),
+    ("Put the terms in order", ["reorder", "reorder-widths", "reorder-slopes", "reorder-optical", "reorder-replace"]),
 ]
+
+# `filenametools reorder <family> ...` is the same as `filenametools reorder-<family> ...`; the old names stay.
+REORDER_FAMILIES = ("widths", "slopes", "optical", "replace")
+REORDER_DESCRIPTION = "move terms into place: reorder widths | slopes | optical | replace"
 
 # Two targets read their arguments by hand and have no -h of their own; the dispatcher answers for them.
 OWN_HELP: Dict[str, str] = {
@@ -67,7 +71,9 @@ def _usage() -> str:
     lines = ["usage: filenametools <target> [options] PATH ...", ""]
     for title, targets in GROUPS:
         lines.append(f"{title}:")
-        lines += [f"  {name:<{width}}  {TARGETS[name][1]}" for name in targets]
+        lines += [
+            f"  {name:<{width}}  {REORDER_DESCRIPTION if name == 'reorder' else TARGETS[name][1]}" for name in targets
+        ]
         lines.append("")
     lines += [
         "Run `filenametools <target> -h` for that target's options.",
@@ -90,6 +96,16 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
 
     target, rest = argv[0], argv[1:]
+    if target == "reorder":
+        if not rest or rest[0] not in REORDER_FAMILIES:
+            given = f" '{rest[0]}'" if rest else ""
+            print(
+                f"filenametools reorder: give one of {', '.join(REORDER_FAMILIES)}{given and ' (not' + given + ')'}\n"
+                "Example: filenametools reorder widths fonts/ -r -n",
+                file=sys.stderr,
+            )
+            return 2
+        target, rest = f"reorder-{rest[0]}", rest[1:]
     if target not in TARGETS:
         print(f"filenametools: unknown target '{target}'\n", file=sys.stderr)
         print(_usage(), file=sys.stderr)

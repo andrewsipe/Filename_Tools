@@ -4,6 +4,9 @@
 
 ### Changed
 - Install and update instructions use `uv tool install` / `uv tool upgrade` (pipx is no longer mentioned).
+- `filenametools reorder widths|slopes|optical|replace` is one command for the four reorder commands. The old names (`reorder-widths`, ...) still work and run the same code.
+- `compound` writes the house form: `Semi Bold` and `SemiBold` become `Semibold`, `Semi Condensed` becomes `SemiCondensed`, `XX Condensed` becomes `XXCondensed` (before, an X run came out as `Xx`), `Semi Mono` becomes `SemiMono`, `Small Caps` becomes `Smallcaps`. The family part is left alone. Its description no longer says `SemiBold -> Semi Bold`.
+- Help in plain words for every command (`include subfolders`, `preview only; change nothing`, `skip the preview and start right away`, ...), with a help line for each `cleaner --no-*` flag and for the cleanup flags.
 - `filenametools -h` and the README group the commands by job, in the order a run usually goes (look first, clean up in one go, fix the words, fix hyphens and add Regular, put the terms in order), with a suggested order and a note that everything outside the first group renames files. Command names are unchanged. A few descriptions are in plainer words.
 
 ### Fixed

@@ -60,6 +60,7 @@ Requires Python 3.10+. FontCore is vendored in `FontCore/` (see `FontCore/VENDOR
 
 | Target | Was | What it does |
 |---|---|---|
+| `reorder` | (the four below) | `reorder widths`, `reorder slopes`, `reorder optical`, `reorder replace`: the same as the old names, which still work |
 | `reorder-widths` | `FNT_ReorderWidths.py` | Reorder width terms |
 | `reorder-slopes` | `FNT_ReorderSlopes.py` | Reorder slope terms |
 | `reorder-optical` | `FNT_ReorderOpticalSizes.py` | Reorder optical-size terms |

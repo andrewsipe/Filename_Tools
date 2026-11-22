@@ -89,7 +89,7 @@ def test_every_target_is_in_exactly_one_group():
     from filenametools.cli import GROUPS
 
     listed = [t for _, targets in GROUPS for t in targets]
-    assert sorted(listed) == sorted(TARGETS)
+    assert sorted(listed) == sorted(set(TARGETS) | {"reorder"})
     assert len(listed) == len(set(listed))
 
 
@@ -126,3 +126,41 @@ def test_help_for_the_targets_that_read_their_own_arguments(target):
     result = _cli(target, "-h")
     assert result.returncode == 0 and f"usage: filenametools {target}" in result.stdout
     assert "No such file" not in result.stdout + result.stderr
+
+
+# ---- one reorder command ---------------------------------------------------------------------------------
+
+def test_reorder_runs_the_same_code_as_the_old_names(tmp_path):
+    for n in ("Probe-CondensedBold.otf", "Probe-BoldCondensed.otf"):
+        (tmp_path / n).touch()
+    old = _cli("reorder-widths", "-n", "--no-preview", str(tmp_path)).stdout
+    new = _cli("reorder", "widths", "-n", "--no-preview", str(tmp_path)).stdout
+    assert old == new and "→" in new
+
+
+@pytest.mark.parametrize("family", ["widths", "slopes", "optical", "replace"])
+def test_reorder_help_for_each_family(family):
+    result = _cli("reorder", family, "-h")
+    assert result.returncode == 0 and "usage:" in result.stdout
+
+
+def test_reorder_without_a_family_lists_them():
+    result = _cli("reorder")
+    assert result.returncode == 2
+    text = result.stdout + result.stderr
+    assert all(f in text for f in ("widths", "slopes", "optical", "replace"))
+
+
+def test_reorder_with_an_unknown_family_says_so():
+    result = _cli("reorder", "colors")
+    assert result.returncode == 2 and "colors" in result.stdout + result.stderr
+
+
+def test_the_old_names_still_work():
+    for t in ("reorder-widths", "reorder-slopes", "reorder-optical", "reorder-replace"):
+        assert _cli(t, "-h").returncode == 0
+
+
+def test_the_help_lists_reorder_first_in_its_group():
+    out = _cli("-h").stdout
+    assert out.index("  reorder ") < out.index("reorder-widths")

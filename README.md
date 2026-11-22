@@ -26,6 +26,7 @@ Requires Python 3.10+. FontCore is vendored in `FontCore/` (see `FontCore/VENDOR
 
 | Target | Was | What it does |
 |---|---|---|
+| `check` | `FNT_Check.py` | List filenames that need a look; changes nothing (no hyphen, extra hyphens, stray spaces, cut-short words like `Cond`, filename vs name records) |
 | `cleaner` | `FontFiles_Cleaner.py` | Unified cleaner with light/heavy workflows |
 | `normalize` | `FNT_Normalizer.py` | Case-insensitive term normalization |
 | `numbers` | `FNT_NumberWordConverter.py` | Number words to digits (`One` → `1`) |
@@ -46,6 +47,7 @@ Requires Python 3.10+. FontCore is vendored in `FontCore/` (see `FontCore/VENDOR
 ## Quick start
 
 ```bash
+filenametools check fonts/ -r               # list names that need a look (renames nothing)
 filenametools cleaner fonts/ -r -n          # preview the unified cleaner, recursive
 filenametools reorder-widths fonts/ -r -n
 filenametools normalize fonts/ -r

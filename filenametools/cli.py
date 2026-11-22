@@ -15,6 +15,7 @@ from filenametools import __version__
 
 # target -> (module, one-line description)
 TARGETS: Dict[str, Tuple[str, str]] = {
+    "check": ("FNT_Check", "list filenames that need a look (changes nothing)"),
     "cleaner": ("FontFiles_Cleaner", "unified filename cleaner (light/heavy workflows)"),
     "normalize": ("FNT_Normalizer", "case-insensitive term normalization"),
     "numbers": ("FNT_NumberWordConverter", "number words to digits (One -> 1)"),

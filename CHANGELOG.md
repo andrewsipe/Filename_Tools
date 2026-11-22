@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- `filenametools check`: lists filenames that need a look and changes nothing. Findings: `no-hyphen`, `extra-hyphens`, `spaces`, `weight-in-family`, `cut-short` (suggests the full word from the font's own name records, or marks a dictionary guess as possible), `lowercase-style`, `copy-suffix`, `name-mismatch` (filename style vs the font's name records) and `name-records-odd` (the records hold no style word). On a 1,539-font library sample only 3 fonts are flagged; on a 2,532-font intake copy, 231.
+
 ## [0.2.2] - 2026-11-21
 
 ### Changed

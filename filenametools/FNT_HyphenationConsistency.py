@@ -388,7 +388,7 @@ def main(argv: Sequence[str]) -> int:
     cs.fmt_processing_summary(
         dry_run=args.dry_run,
         updated=changed,
-        unchanged=total_files - changed,
+        unchanged=max(total_files - changed - errors, 0),
         errors=errors,
     )
     return 0 if errors == 0 else 1

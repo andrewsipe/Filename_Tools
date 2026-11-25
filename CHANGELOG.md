@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0] - 2026-11-25
+
+FontCore 0.8.2 vendored (see `FontCore/VENDOR.md`).
+
+### Changed
+- Every renaming command ends with one sentence ("Updated 3, unchanged 1, no problems."; "Would update ..." in a preview), and the chip turns to a warning when a file had a problem. `cleaner` now uses it too, in place of its own five-line summary.
+- Files that failed are no longer counted as unchanged.
+
 ## [0.4.1] - 2026-11-25
 
 FontCore 0.7.0 vendored (see `FontCore/VENDOR.md`).

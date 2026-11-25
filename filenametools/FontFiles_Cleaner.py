@@ -1501,14 +1501,14 @@ Examples:
     )
 
     # Final summary
-    print("=" * 80)
-    StatusIndicator("success").add_message("Processing Complete!").emit()
-    print("=" * 80)
-    StatusIndicator("info").add_message(f"Total files processed: {total}").emit()
-    StatusIndicator("info").add_message(f"Files updated: {changed}").emit()
-    StatusIndicator("info").add_message(f"Files unchanged: {total - changed}").emit()
-    StatusIndicator("info").add_message(f"Errors: {errors}").emit()
-    print("=" * 80)
+    from FontCore import core_console_styles as cs
+
+    cs.fmt_processing_summary(
+        dry_run=args.dry_run,
+        updated=changed,
+        unchanged=max(total - changed - errors, 0),
+        errors=errors,
+    )
 
     return 0 if errors == 0 else 1
 

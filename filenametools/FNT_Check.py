@@ -193,9 +193,9 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(list(sys.argv[1:] if argv is None else argv))
-    from FontCore.core_file_collector import collect_font_files
+    from FontCore.core_file_collector import SUPPORTED_EXTENSIONS, collect_font_files
 
-    files: List[Path] = [Path(f) for f in collect_font_files(args.paths, recursive=args.recursive)]
+    files: List[Path] = [Path(f) for f in collect_font_files(args.paths, recursive=args.recursive, allowed_extensions=SUPPORTED_EXTENSIONS)]
     if not files:
         print("No font files found.")
         return 0

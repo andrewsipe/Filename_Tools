@@ -748,7 +748,9 @@ def analyze_files(
 
     # Collect all font files using the file collector
     font_files = collector.collect_font_files(
-        paths=[str(p) for p in paths], recursive=recursive
+        paths=[str(p) for p in paths],
+        recursive=recursive,
+        allowed_extensions=collector.SUPPORTED_EXTENSIONS,
     )
 
     # Analyze each file

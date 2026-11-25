@@ -18,7 +18,7 @@ from pathlib import Path
 # ruff: noqa: E402
 
 # Import core file collector
-from FontCore.core_file_collector import collect_font_files
+from FontCore.core_file_collector import SUPPORTED_EXTENSIONS, collect_font_files
 
 
 # ============================================================================
@@ -642,7 +642,7 @@ def main():
     if recursive:
         print("  (recursive mode enabled)")
 
-    font_files = collect_font_files(args, recursive=recursive)
+    font_files = collect_font_files(args, recursive=recursive, allowed_extensions=SUPPORTED_EXTENSIONS)
 
     if not font_files:
         print("Error: No font files found.")

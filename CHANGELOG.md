@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0] - 2026-11-26
+
+FontCore 0.11.0 vendored (see `FontCore/VENDOR.md`).
+
+### Changed
+- `check` follows the third variable form: `Probe-WidthVariableItalic`, `AugureStereoLight-WidthVariable`, `ParchWeight-CustomVariableUpright` and `ProbeAlt-Variable` are house form; `Probe-VariableWidth`, `Probe-VariableBlack` and `Probe-VariableAlt` are flagged with the new name.
+
 ## [0.7.2] - 2026-11-26
 
 FontCore 0.10.2 vendored: a locked `Regular` weight word is kept (`AugureStereo-VariableRegular` is no longer mistaken for a free weight), and is dropped only when the font has a free weight axis.

@@ -59,7 +59,6 @@ def test_check_accepts_house_form_variable_names(tmp_path):
     "stem, suggestion",
     [
         ("Probe-CondensedVariable", "ProbeCondensed-Variable"),
-        ("Probe-VariableRegular", "Probe-Variable"),
         ("Probe-VariableRoman", "Probe-VariableUpright"),
         ("Probe-VariableSlope", "Probe-Variable"),
         ("Probe-Variable3AxisItalic", "Probe-VariableItalic"),

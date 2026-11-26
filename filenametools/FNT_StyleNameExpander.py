@@ -45,6 +45,7 @@ except Exception:  # pragma: no cover - env dependent
     _FONTTOOLS_AVAILABLE = False
 
 import FontCore.core_console_styles as cs
+from filenametools.variable_names import is_variable_filename
 import FontCore.core_font_style_dictionaries as _core
 
 
@@ -815,6 +816,8 @@ def perform_rename(
     verbose: bool,
 ) -> Tuple[bool, Optional[str]]:
     """Execute rename and return (changed, error_message)."""
+    if is_variable_filename(file_path.name):  # set by fontrenamer from the font's tables
+        return False, None
     decision = compute_rename(file_path)
 
     if decision.new_name == decision.old_name:

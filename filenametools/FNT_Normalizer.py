@@ -27,6 +27,7 @@ from typing import List, Sequence, Tuple
 # ruff: noqa: E402
 
 import FontCore.core_console_styles as cs
+from filenametools.variable_names import is_variable_filename
 import FontCore.core_file_collector as collector
 from FontCore.core_font_style_dictionaries import COMPOUND_NORMALIZATIONS
 
@@ -547,6 +548,8 @@ def perform_rename(
     remove_counter: bool = False,
 ) -> Tuple[bool, str | None]:
     """Perform the actual file rename operation."""
+    if is_variable_filename(file_path.name):  # set by fontrenamer from the font's tables
+        return False, None
     decision = compute_rename(file_path, remove_counter=remove_counter)
     if decision.new_name == decision.old_name:
         if verbose:

@@ -55,6 +55,7 @@ from typing import Iterable, Sequence, Tuple
 # ruff: noqa: E402
 
 import FontCore.core_console_styles as cs
+from filenametools.variable_names import is_variable_filename
 from FontCore.core_font_style_dictionaries import ALL_WIDTH_TERMS
 
 
@@ -366,6 +367,8 @@ def perform_rename(
     find_needles: Sequence[str] | None = None,
     title_case: bool = False,
 ) -> None:
+    if is_variable_filename(file_path.name):  # set by fontrenamer from the font's tables
+        return 
     old_name, new_name = compute_rename(
         file_path,
         include_extension,

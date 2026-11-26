@@ -28,6 +28,7 @@ from typing import Iterable, List, Optional, Sequence, Tuple
 # ruff: noqa: E402
 
 import FontCore.core_console_styles as cs
+from filenametools.variable_names import is_variable_filename
 
 try:
     import word2number.w2n as w2n  # type: ignore
@@ -522,6 +523,8 @@ def perform_rename(
     verbose: bool,
     leading_zero: bool = False,
 ) -> Tuple[bool, str | None]:
+    if is_variable_filename(file_path.name):  # set by fontrenamer from the font's tables
+        return False, None
     original_value = file_path.name
     new_value, changes = build_new_filename(original_value, leading_zero=leading_zero)
     if new_value == original_value:

@@ -22,6 +22,7 @@ from typing import List, Optional, Sequence
 # ruff: noqa: E402
 
 import FontCore.core_console_styles as cs
+from filenametools.variable_names import house_form, is_variable_filename
 from FontCore.core_font_style_dictionaries import (
     MODIFIERS,
     STYLE_WORDS,
@@ -86,9 +87,38 @@ def _words(text: str) -> set:
     return {t.lower() for t in _tokens(text)}
 
 
+def _squash(text: str) -> str:
+    return re.sub(r"[\s_]+", "", text)
+
+
+def _variable_findings(stem: str) -> List[Finding]:
+    """A variable font's name is judged by its own form, not the static rules (FontCore DECISIONS.md, Area 5)."""
+    from FontCore.core_variable_filename_parser import parse_variable_filename
+
+    slots = parse_variable_filename(stem, strip_extension=False)
+    if slots is None:
+        return []
+    if not slots.is_valid:
+        return [Finding("variable-weight", "a weight word comes before Variable (a weight belongs after it: Probe-VariableBlack)")]
+    wanted = house_form(stem)
+    if wanted and _squash(wanted) != _squash(stem):
+        return [
+            Finding(
+                "variable-form",
+                "the variable name is not in the house form {Family}{Optical}{Width}-Variable{Axes}{Weight}{Slope}; "
+                "the axes can only be read from the font, so run fontrenamer to set them",
+                wanted,
+            )
+        ]
+    return []
+
+
 def check_stem(stem: str, records: Optional[Records] = None) -> List[Finding]:
     """Findings for one filename stem (no extension)."""
     found: List[Finding] = []
+
+    if is_variable_filename(stem):
+        return _variable_findings(stem)
 
     # copy suffixes first, so they don't confuse the other checks
     copy = re.search(r"\s*(\(\d+\)|copy( \d+)?)\s*$", stem, re.I)

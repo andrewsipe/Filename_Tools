@@ -30,6 +30,7 @@ from typing import Iterable, List, Tuple
 # ruff: noqa: E402
 
 import FontCore.core_console_styles as cs
+from filenametools.variable_names import is_variable_filename
 
 
 # --- Helpers ------------------------------------------------------------------------------------
@@ -219,6 +220,8 @@ def perform_rename(
     conflict: str,
     verbose: bool,
 ) -> Tuple[bool, str | None]:
+    if is_variable_filename(file_path.name):  # set by fontrenamer from the font's tables
+        return False, None
     old_name = file_path.name
     new_name, changed = build_new_filename(old_name)
 

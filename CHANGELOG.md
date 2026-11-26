@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.6.0] - 2026-11-25
+
+FontCore 0.9.1 vendored (`core_variable_filename_parser` added; see `FontCore/VENDOR.md`).
+
+### Changed
+- Every renaming command and `cleaner` now leave variable-font filenames alone. They moved a locked width behind the hyphen (`ProbeDisplayCondensed-Variable` became `ProbeDisplay-Condensed-Variable`), which undid the variable form. Variable names are set by `fontrenamer`, which reads the axes from the font.
+- `check` judges a variable name by the variable house form `{Family}{Optical}{Width}-Variable{Axes}{Weight}{Slope}`: it flags the old forms (`Probe-CondensedVariable`, `Probe-VariableRegular`, `Probe-VF`, `Probe-Var`) with the suggested name, and a weight before Variable.
+
+### Fixed
+- `compound` spelled the Slanted marker `VaraibleSlanted`.
+
 ## [0.5.0] - 2026-11-25
 
 FontCore 0.8.2 vendored (see `FontCore/VENDOR.md`).

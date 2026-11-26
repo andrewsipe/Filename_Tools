@@ -23,6 +23,7 @@ from typing import Dict, Iterable, List, Sequence, Tuple, Optional
 # ruff: noqa: E402
 
 import FontCore.core_console_styles as cs
+from filenametools.variable_names import is_variable_filename
 from FontCore.core_font_style_dictionaries import join_style_compounds
 
 
@@ -52,7 +53,7 @@ COMPOUND_NORMALIZATIONS: Dict[str, str] = {
     "VF": "Variable",
     "Variableitalic": "VariableItalic",
     "Variableoblique": "VariableOblique",
-    "Variableslanted": "VaraibleSlanted",
+    "Variableslanted": "VariableSlanted",
     "Variableupright": "VariableUpright",
     "Variableroman": "VariableRoman",
     "VariableRegular-Variable": "-Variable",
@@ -434,6 +435,8 @@ def perform_rename(
     conflict: str,
     verbose: bool,
 ) -> Tuple[bool, str | None]:
+    if is_variable_filename(file_path.name):  # set by fontrenamer from the font's tables
+        return False, None
     original_value = file_path.name
     new_value, changes = build_new_filename(original_value)
     if new_value == original_value:

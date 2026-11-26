@@ -3,7 +3,7 @@
 filenametools ships a minimal copy of [FontCore](https://github.com/andrewsipe/FontCore)
 so it installs without the full library, a submodule, or a symlink.
 
-**Source:** FontCore 0.8.2 (`v0.8.2`)
+**Source:** FontCore 0.9.1 (`v0.9.1`)
 
 **Do not edit these files here.** Fix them in FontCore, then re-sync.
 
@@ -12,11 +12,14 @@ so it installs without the full library, a submodule, or a symlink.
 - `core_console_styles.py`
 - `core_file_collector.py`
 - `core_font_style_dictionaries.py`
+- `core_variable_filename_parser.py`
 
 ## Pulled in as imports of the above
 
 - `core_console_config.py`
+- `core_filename_parts_parser.py`
 - `core_logging_config.py`
+- `core_variable_traits.py`
 
 ## Refresh
 

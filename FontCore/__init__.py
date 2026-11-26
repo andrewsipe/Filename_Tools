@@ -1,4 +1,4 @@
 """Vendored FontCore subset used by filenametools. Managed by tools/vendor_fontcore.py."""
 
-__fontcore_version__ = "0.8.2"
-__fontcore_source__ = "v0.8.2"
+__fontcore_version__ = "0.9.1"
+__fontcore_source__ = "v0.9.1"

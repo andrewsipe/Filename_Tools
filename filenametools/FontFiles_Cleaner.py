@@ -18,6 +18,8 @@ import unicodedata
 from pathlib import Path
 from typing import List, Set, Tuple, Dict, Optional
 
+from filenametools.variable_names import is_variable_filename
+
 # Import our dictionaries
 try:
     from FontCore.core_font_style_dictionaries import (
@@ -1187,6 +1189,8 @@ def process_filename(
     step_log: List of (operation_name, name_before, name_after) for changes.
     """
     disabled_ops = disabled_ops or set()
+    if is_variable_filename(filename):  # set by fontrenamer from the font's tables
+        return filename, False, []
 
     # Define operation sequences for each workflow (conservative approach)
     workflows = {

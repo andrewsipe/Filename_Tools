@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0] - 2026-11-26
+
+FontCore 0.10.0 vendored (see `FontCore/VENDOR.md`).
+
+### Changed
+- `check` follows the refined variable rule: `Probe-VariableUpright`, `-VariableWidthItalic`, `-VariableCustom` and `{Family}Collection-Variable` are house form; the old `Slope`, axis-count and Roman forms are flagged with the new name.
+
 ## [0.6.0] - 2026-11-25
 
 FontCore 0.9.1 vendored (`core_variable_filename_parser` added; see `FontCore/VENDOR.md`).

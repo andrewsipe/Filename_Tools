@@ -11,10 +11,11 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 HOUSE_FORM = [
-    "Probe-Variable", "Probe-VariableUpright", "Probe-VariableItalic", "Probe-VariableWidthUpright",
-    "Probe-VariableOpticalSizeItalic", "Probe-VariableWidth", "Probe-VariableCustomUpright",
+    "Probe-Variable", "Probe-VariableUpright", "Probe-VariableItalic", "Probe-WidthVariableUpright",
+    "Probe-OpticalSizeVariableItalic", "Probe-WidthVariable", "Probe-CustomVariableUpright",
     "ProbeCollection-Variable", "ProbeDisplayCondensed-Variable", "ProbeDisplayCondensed-VariableItalic",
-    "Probe-VariableBlackItalic", "Probe-VariableOblique", "Probe-VariableWidthRegularUpright", "RobotoFlex-VariableCustom",
+    "ProbeBlack-WidthVariableItalic", "Probe-VariableOblique", "AugureStereoLight-WidthVariable", "RobotoFlex-CustomVariable",
+    "ProbeAlt-Variable", "ParchWeight-CustomVariableUpright",
 ]
 REWRITERS = [
     "normalize", "numbers", "compound", "abbreviations", "styles", "capitalize-after-hyphen",
@@ -62,6 +63,9 @@ def test_check_accepts_house_form_variable_names(tmp_path):
         ("Probe-VariableRoman", "Probe-VariableUpright"),
         ("Probe-VariableSlope", "Probe-Variable"),
         ("Probe-Variable3AxisItalic", "Probe-VariableItalic"),
+        ("Probe-VariableWidth", "Probe-WidthVariable"),
+        ("Probe-VariableBlackItalic", "ProbeBlack-VariableItalic"),
+        ("Probe-VariableAlt", "ProbeAlt-Variable"),
         ("Probe-VF", "Probe-Variable"),
         ("Probe-Var", "Probe-Variable"),
     ],

@@ -1,3 +1,3 @@
 """Filename Tools: clean, normalize and reorder terms in font filenames."""
 
-__version__ = "0.7.2"
+__version__ = "0.8.0"

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.3] - 2026-11-26
+
+FontCore 0.11.6 vendored (see `FontCore/VENDOR.md`).
+
+### Fixed
+- FontCore 0.11.6: `check` treats a copy marker on a variable filename as a copy suffix, not a design variant, and suggests the name without it.
+
 ## [0.8.2] - 2026-11-26
 
 FontCore 0.11.2 vendored: a locked weight word is written only when the filename states it. The name table and `usWeightClass` are no longer read for a weight, and there is no `Weight` placeholder (`Danfo-Variable` becomes `Danfo-CustomVariableUpright`). A locked `Regular` the filename states is still written.
